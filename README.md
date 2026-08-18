@@ -92,10 +92,15 @@ erroring if these files don't exist):
   today's commentary, not period-accurate fan/analyst sentiment for a past
   season.
 - **Iteration-cap hook** (`.claude/settings.json` →
-  `scripts/hooks/enforce_iteration_cap.py`): not yet empirically verified to
-  fire on tool calls made inside a subagent's internal loop vs. only
-  top-level session calls. Smoke-test before relying on it (see script
-  docstring); the prompt-level budget in `predictor.md` is the fallback.
+  `scripts/hooks/enforce_iteration_cap.py`): the hook script's own logic is
+  verified (pipe-tested: allows below the cap, denies with the correct
+  `hookSpecificOutput` schema exactly at the cap). What's *not* yet verified
+  is whether Claude Code actually routes tool calls made inside a
+  subagent's internal loop through a project-level `PreToolUse` hook, vs.
+  only top-level session calls — that can only be confirmed by watching a
+  live `predictor` subagent run hit the cap. Smoke-test before relying on
+  it (see script docstring); the prompt-level budget in `predictor.md` is
+  the fallback either way.
 
 ## Setup
 
