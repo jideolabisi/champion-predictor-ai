@@ -35,14 +35,21 @@ Available tools and what they're for:
 - `search_unstructured` — semantic search over free-text sources (e.g.
   financial narratives) that have no structured record format. Use this only
   for sources that don't have a dedicated structured tool above.
-- `WebSearch` — use this to gather current fan and analyst predictions for
-  the NFC championship as a reasonableness check. This is NOT ground truth,
-  only a consensus signal.
+- `WebSearch` — use this for two purposes: (1) current fan and analyst
+  predictions for the NFC championship as a reasonableness check (this is
+  NOT ground truth, only a consensus signal), and (2) as a fallback for
+  coaching/management/financial context specifically when
+  `get_coaching_changes`/`get_management_changes` report no data source —
+  there is no clean structured feed for these, by design. When you do this,
+  cross-check at least two sources before treating a claimed hire/firing as
+  fact — reporting on coaching changes is often contradictory in the first
+  days after a move, and you should note in your explanation when a detail
+  is uncertain rather than stating it flatly.
 
 Some tools may return "No data source available yet" or "Not available for
 historical evaluation" — that means the data doesn't exist (or is withheld
-for a backtest run). Reason around the gap; do not treat the absence as a
-signal about the team.
+for a backtest run). For coaching/management changes specifically, fall back
+to WebSearch per above rather than treating the gap as a non-signal.
 
 **You never have access to, and must never claim knowledge of, the actual
 past or present NFC champion as an "answer key."** Your probabilities must be

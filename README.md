@@ -72,13 +72,34 @@ Collected (see `data/raw/` and `data/validation/`):
   `DESCRIPTION` field per record — no FAISS needed for this source)
 - Historical NFC champions, 2006–2025 (validation-only)
 
-Not yet collected (open, tackled opportunistically — `safe_server.py`
-degrades gracefully with an explicit "not available yet" message rather than
-erroring if these files don't exist):
-- Coaching changes (`data/raw/coaching_changes_2026.csv`)
-- Team management changes (`data/raw/management_changes_2026.csv`)
-- Player injury reports (`data/raw/injury_reports_2026.csv`)
-- Financial information (`data/raw/unstructured/financial/*.txt`)
+Not yet collected as structured data — `safe_server.py` degrades gracefully
+with an explicit "not available yet" message rather than erroring if these
+files don't exist:
+- **Player injury reports**: `scripts/fetch/fetch_injuries.py` is written
+  (uses `nfl_data_py.import_injuries`, requires `pyarrow`) but the 2026
+  season's weekly injury reports don't exist yet as of this writing — nflverse
+  only publishes them once real games are played. Re-run once the season
+  starts.
+- **Coaching changes, team management changes**: deliberately *not* built as
+  a hand-authored structured file. There is no clean structured API for
+  this (checked: `nfl_data_py` has nothing; the ESPN transactions feed
+  behind `get_transactions` is player-moves only). A first pass at compiling
+  this from web search results produced contradicting claims across sources
+  (e.g. conflicting reports of who was hired where) — encoding that into a
+  CSV presented as ground truth would be worse than not having the tool.
+  Instead, `predictor.md` instructs the predictor to fall back to
+  `WebSearch` for this specific gap, cross-check multiple sources, and
+  flag uncertainty in its explanation rather than stating an unverified hire
+  as fact.
+- **Financial information**: done — `data/raw/unstructured/financial/*.txt`,
+  one file per NFC team, sourced from Sportico's 2026 franchise valuations
+  (via CBS Sports' summary, a single non-contradictory ranked list — unlike
+  the coaching-changes search above). FAISS-indexed; retrieval spot-checked
+  and correctly surfaces the Seattle ownership-sale and Green Bay
+  non-profit-structure files for matching queries. Known limitation: local
+  MiniLM embeddings are weak at numeric-superlative queries (e.g. "highest
+  valuation" didn't surface the actual #1 team, Dallas) — semantic search
+  isn't a substitute for reading exact numbers when precision matters.
 
 ## Known limitations
 

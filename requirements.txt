@@ -14,5 +14,5 @@ sentence-transformers
 # with --no-deps, then its lightweight runtime deps directly:
 #   pip install --no-deps nfl_data_py
 #   pip install appdirs requests requests-cache
-# (fastparquet is only needed for a few nfl_data_py functions we don't use —
-# skip it unless a fetch script specifically errors asking for it.)
+# scripts/fetch/fetch_injuries.py additionally needs parquet support:
+#   pip install pyarrow
