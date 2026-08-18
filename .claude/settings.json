@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__champion-data__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".venv/Scripts/python.exe scripts/hooks/enforce_iteration_cap.py"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,543 @@
+SEASON,SNAPSHOT_DATE,WEEK,TEAM,TEAM_NAME,PLAYER_ID,PLAYER,POSITION,PREV_TEAM,TRANSACTION_TYPE,DESCRIPTION,SOURCE
+2026,2026-08-12,33,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Waived DT PJ Mustipher.,espn_transactions_api
+2026,2026-08-11,33,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Released DT PJ Mustipher from injured reserve with a settlement.,espn_transactions_api
+2026,2026-08-11,33,ATL,Atlanta Falcons,,,,,SIGNING,Signed TE Nick Muse and RB Trey Sermon.,espn_transactions_api
+2026,2026-08-12,33,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,Reverted DT Le'Meke Brockington and S Malik Verdon to injured reserve after they cleared waivers.,espn_transactions_api
+2026,2026-08-10,33,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,Reinstated RT Jawaan Taylor from the active/PUP list. Signed DE Cameron Sample. Waived LS Phil Florenzo. Waived/injured OL Jack Nelson.,espn_transactions_api
+2026,2026-08-10,33,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Signed G Joshua Gray. Waived TE Chamon Metayer. Reverted LB Nick Hampton and WR Malick Meiga to injured reserve after they cleared waivers.,espn_transactions_api
+2026,2026-08-12,33,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Waived S Brandon Hill.,espn_transactions_api
+2026,2026-08-11,33,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Signed OL Wesley French to a contract. Waived DB Brandon Hill.,espn_transactions_api
+2026,2026-08-10,33,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Signed WR Ray-Ray McCloud III. Waived/injured WR Kyron Hudson.,espn_transactions_api
+2026,2026-08-12,33,DET,Detroit Lions,,,,,WAIVE_RELEASE,Waived TE Miles Kitselman.,espn_transactions_api
+2026,2026-08-10,33,DET,Detroit Lions,,,,,WAIVE_RELEASE,Signed QB Joshua Dobbs to a one-year contract. Released TE Anthony Firkser. Waived DB De'Shawn Rucker. Placed DT Aidan Keanaaina on injured reserve.,espn_transactions_api
+2026,2026-08-12,33,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Waived G Karsen Barnhart and TE Drew Biber.,espn_transactions_api
+2026,2026-08-11,33,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed Ss Trey Dean III and Tra Fluellen. Released TE Drew Biber and G Karsen Barnhart.,espn_transactions_api
+2026,2026-08-10,33,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Claimed WR Chris Hilton Jr. off waivers from Washington. Reverted DBs Johnathan Baldwin and Marlon Jones to injured reserve after they cleared waivers.,espn_transactions_api
+2026,2026-08-10,33,LAR,Los Angeles Rams,,,,,WAIVE_RELEASE,Signed CB Zech McPhearson. Waived DB Drey Norwood.,espn_transactions_api
+2026,2026-08-12,33,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Signed RB Jermar Jefferson. Waived RB Jordan Mims.,espn_transactions_api
+2026,2026-08-12,33,NO,New Orleans Saints,,,,,SIGNING,Signed DT Kahlil Saunders.,espn_transactions_api
+2026,2026-08-10,33,NYG,New York Giants,,,,,WAIVE_RELEASE,Signed DB J.T. Woods. Released DT Sam Roberts.,espn_transactions_api
+2026,2026-08-10,33,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,"Signed DT David Blay Jr., RB Ja'Quinden Jackson and OLB Tarron Jackson. Waived G Jaeden Roberts and TE Dae'Quan Wright. Placed RB Elijah Mitchell on injured reserve.",espn_transactions_api
+2026,2026-08-11,33,SEA,Seattle Seahawks,,,,,SIGNING,Reinstated S Nick Emmanwori from the active/PUP list. Signed LB Aaron Smith. Placed FB Robbie Ouzts on injured reserve.,espn_transactions_api
+2026,2026-08-12,33,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,"Signed CB Eli Apple, RB Zamir White and DE Xavier Thomas. Waived LB Junior Bergen and WR Jack Bouwmeester.",espn_transactions_api
+2026,2026-08-10,33,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed OL Doug Kramer Jr. Released OL Nick Zakelj.,espn_transactions_api
+2026,2026-08-10,33,TB,Tampa Bay Buccaneers,,,,,SIGNING,Signed CB Roman Parodie. Placed DB Kemon Hall on injured reserve.,espn_transactions_api
+2026,2026-08-08,32,ARI,Arizona Cardinals,,,,,RESERVE_MOVE,Placed S Joey Blount and TE Kenny Yeboah on injured reserve.,espn_transactions_api
+2026,2026-08-09,32,ARI,Arizona Cardinals,,,,,SIGNING,Signed TE Shawn Bowman and LB Eugene Asante.,espn_transactions_api
+2026,2026-08-05,32,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Waived DB Jaden Davis.,espn_transactions_api
+2026,2026-08-04,32,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Claimed RB Evan Hull off waivers from Houston and DT Cam Horsley off waivers from Tennessee. Waived DT Coziah Izzard and WR Tejhuan Palmer.,espn_transactions_api
+2026,2026-08-03,32,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Claimed RB Evan Hull off waivers from Houston and DT Cam Horsley off waivers from Tennessee. Waived DT Coziah Izzard and WR Tejhuan Palmer.,espn_transactions_api
+2026,2026-08-08,32,ATL,Atlanta Falcons,,,,,OTHER,Activated DL Zach Harrison from the non-football injury list.,espn_transactions_api
+2026,2026-08-04,32,ATL,Atlanta Falcons,,,,,SIGNING,Signed DT Marlon Tuipulotu. Placed LB DeAngelo Malone on the active/PUP list.,espn_transactions_api
+2026,2026-08-07,32,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,Signed WR Kristian Wilkerson to a contract. Released LB Troy Andersen.,espn_transactions_api
+2026,2026-08-03,32,CAR,Carolina Panthers,,,,,OTHER,Reinstated DT Bobby Brown III from the active/non-football injury list.,espn_transactions_api
+2026,2026-08-04,32,CAR,Carolina Panthers,,,,,SIGNING,Announced the retirement of DT LaBryan Ray. Signed WRs Roc Taylor and Elijah Cooks.,espn_transactions_api
+2026,2026-08-09,32,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Signed QB Kyle Trask and LB Jeremiah Moon. Waived/injured LBs Nick Hampton and Malick Meiga.,espn_transactions_api
+2026,2026-08-06,32,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived/injured WR Ainas Smith. Released G Saahdiq Charles with an injury settlement.,espn_transactions_api
+2026,2026-08-05,32,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Signed T Jake Curhan and DT Parker Petersen. Placed G Saahdiq Charles on injured reserve. Reverted WR Ainias Smith to injured reserve after he cleared waivers.,espn_transactions_api
+2026,2026-08-05,32,CHI,Chicago Bears,,,,,OTHER,Reinstated LB T.J. Edwards from the active/non-football injury list.,espn_transactions_api
+2026,2026-08-07,32,CHI,Chicago Bears,,,,,SIGNING,Signed DB Xavier Woods to a contract. Placed DB Dallis Flowers on injured reserve.,espn_transactions_api
+2026,2026-08-04,32,CHI,Chicago Bears,,,,,SIGNING,Signed DB Marlen Sewell. Placed DL Jonathan Garvin on injured reserve.,espn_transactions_api
+2026,2026-08-09,32,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Waived LS Luke Elkin. Placed RB KC Eziomume and S Gervarrius Owens on injured reserve. Signed CB Beanie Bishop Jr.,espn_transactions_api
+2026,2026-08-08,32,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Signed DBs Brandon Hill and William Wright. Waived DBs K.C. Eziomume and Gervarrius Owens.,espn_transactions_api
+2026,2026-08-09,32,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Waived RB Dominic Richardson and DE Charles Snowden.,espn_transactions_api
+2026,2026-08-08,32,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Signed RB Jashaun Corbin. Waived RB Dominic Richardson and DE Charles Snowden.,espn_transactions_api
+2026,2026-08-07,32,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Signed RB Jashaun Corbin to a contract. Waived RB Dominic Richardson.,espn_transactions_api
+2026,2026-08-03,32,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Signed OL Sebastian Gutierrez. Reverted OLB Charles Snowden to injured reserve after he cleared waivers.,espn_transactions_api
+2026,2026-08-04,32,DET,Detroit Lions,,,,,SIGNING,Re-signed TE Zach Horton. Placed TE Anthony Firkser on injured reserve. Signed RB Raheem Blackshear.,espn_transactions_api
+2026,2026-08-09,32,DET,Detroit Lions,,,,,WAIVE_RELEASE,Released TE Nick Muse. Placed QB Teddy Bridgewater on the reserve/retired list. Signed LB Amen Ogbongbemiga and DB Ryan Cooper Jr.,espn_transactions_api
+2026,2026-08-08,32,DET,Detroit Lions,,,,,WAIVE_RELEASE,Reverted DB De'Shawn Rucker to injured reserve after clearing waivers.,espn_transactions_api
+2026,2026-08-07,32,DET,Detroit Lions,,,,,WAIVE_RELEASE,Waived/injured CB De'Shawn Rucker. Signed DL Ben Stille to a contract.,espn_transactions_api
+2026,2026-08-05,32,DET,Detroit Lions,,,,,WAIVE_RELEASE,Reinstated TE Tyler Conklin from the active/PUP list. Signed WR Tarik Black. Placed TE Miles Kitselman on injured reserve. Reverted WR Lawrence Keys to injured reserve after he cleared waivers.,espn_transactions_api
+2026,2026-08-03,32,DET,Detroit Lions,,,,,WAIVE_RELEASE,Signed TE Nick Muse. Released WR Tarik Black.,espn_transactions_api
+2026,2026-08-03,32,GB,Green Bay Packers,,,,,OTHER,Reinstated T Brant Banks from the active/PUP list.,espn_transactions_api
+2026,2026-08-09,32,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed WR Kisean Johnson. Claimed WR Chris Hilton Jr. off waivers from Washington. Waived/injured S Johnathan Baldwin II and CB Marlon Jones.,espn_transactions_api
+2026,2026-08-05,32,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Reverted TEs Luke Lachey and R.J. Maryland to injured reserve after they cleared waivers.,espn_transactions_api
+2026,2026-08-04,32,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed TEs McCallan Castles and Drew Biber. Waived/injured TEs Luke Lachey and RJ Maryland.,espn_transactions_api
+2026,2026-08-05,32,LAR,Los Angeles Rams,,,,,OTHER,Reinstated DB Al'zillion Hamilton from the active/PUP list.,espn_transactions_api
+2026,2026-08-09,32,LAR,Los Angeles Rams,,,,,RESERVE_MOVE,Placed S Drey Norwood on injured reserve.,espn_transactions_api
+2026,2026-08-07,32,LAR,Los Angeles Rams,,,,,SIGNING,Signed DE Daniel Rickert to a contract.,espn_transactions_api
+2026,2026-08-08,32,LAR,Los Angeles Rams,,,,,WAIVE_RELEASE,Waived DB Drey Norwood.,espn_transactions_api
+2026,2026-08-05,32,NO,New Orleans Saints,,,,,OTHER,Reinstated DT Keeshawn Silver from the active/PUP list.,espn_transactions_api
+2026,2026-08-09,32,NO,New Orleans Saints,,,,,WAIVE_RELEASE,Waived DT Zxavian Harris.,espn_transactions_api
+2026,2026-08-08,32,NO,New Orleans Saints,,,,,WAIVE_RELEASE,"Reverted DT Keeshawn Silver to injured reserve after clearing waivers. Signed LB Deion Jones, DT Brien Taylor, and DE Malakai Williams. Waived DT Zxavian Harris.",espn_transactions_api
+2026,2026-08-07,32,NO,New Orleans Saints,,,,,WAIVE_RELEASE,Claimed DE Garrett Nelson off waivers from Seattle. Placed DT Bryan Bresee on injured reserve. Waived DT Keeshawn Silver.,espn_transactions_api
+2026,2026-08-08,32,NYG,New York Giants,,,,,WAIVE_RELEASE,Reverted DB Jarrick Bernard-Converse to injured reserve after clearing waivers. Signed G Brenden Jaimes.,espn_transactions_api
+2026,2026-08-06,32,NYG,New York Giants,,,,,WAIVE_RELEASE,Signed FB Grant Finley to a contract. Waived TE Tyler Moore.,espn_transactions_api
+2026,2026-08-05,32,NYG,New York Giants,,,,,WAIVE_RELEASE,Signed CBs D.J. James and David Long Jr. Placed DT Roy Robertson-Harris on injured reserve. Waived/injured WR Beaux Collins.,espn_transactions_api
+2026,2026-08-05,32,PHI,Philadelphia Eagles,,,,,SIGNING,Signed WR Brandon Hayes.,espn_transactions_api
+2026,2026-08-06,32,SEA,Seattle Seahawks,,,,,SIGNING,Signed FB Brock Lampe and RB TJ Harden to contracts.,espn_transactions_api
+2026,2026-08-09,32,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Waived LB Power Echols.,espn_transactions_api
+2026,2026-08-08,32,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Reverted LB Joseph Vaughn to injured reserve after clearing waivers. Signed RB Justin Jones. Waived LB Power Echols.,espn_transactions_api
+2026,2026-08-07,32,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Signed LB Power Echols to a contract. Waived LB Joseph Vaughn.,espn_transactions_api
+2026,2026-08-04,32,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Signed OLB Garrett Nelson. Waived WR Kyre Duplessis.,espn_transactions_api
+2026,2026-08-06,32,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed OL Kion Smith to a one-year contract. Waived WR Colton Dowell.,espn_transactions_api
+2026,2026-08-05,32,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed WR KhaDarel Hodge and LB Ogbonnia Okoronkwo. Released DT Kevin Givens and DE Cameron Sample.,espn_transactions_api
+2026,2026-08-03,32,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Reverted DE Mikail Kamara to injured reserve after he cleared waivers.,espn_transactions_api
+2026,2026-07-31,31,ARI,Arizona Cardinals,,,,,SIGNING,Signed CB Quinton Newsome to a contract. Placed CB Jaden Davis on injured reserve.,espn_transactions_api
+2026,2026-08-01,31,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Signed DL Broderic Martin. Placed DL P.J. Mustipher on injured reserve. Waived RB Chris Collier.,espn_transactions_api
+2026,2026-08-01,31,ATL,Atlanta Falcons,,,,,SIGNING,"Signed G Matthew Bergeron to a 4-year, $96M contract extension.",espn_transactions_api
+2026,2026-07-29,31,ATL,Atlanta Falcons,,,,,SIGNING,Signed QB Cooper Rush to a contract.,espn_transactions_api
+2026,2026-07-30,31,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,Released DT Ross Blacklock. Signed LB Josh Woods to a contract.,espn_transactions_api
+2026,2026-07-28,31,CAR,Carolina Panthers,,,,,OTHER,Activated CB Jaycee Horn from the active/non-football injury list.,espn_transactions_api
+2026,2026-07-29,31,CAR,Carolina Panthers,,,,,SIGNING,Signed WR Casey Washington to a contract.,espn_transactions_api
+2026,2026-07-31,31,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Placed WR Chris Brazzell on injured reserve. Signed TE Chamon Metayer to a contract. Waived,espn_transactions_api
+2026,2026-07-30,31,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Signed WR Gabriel Benyard to a contract. Waived DT Parker Petersen.,espn_transactions_api
+2026,2026-07-29,31,CHI,Chicago Bears,,,,,OTHER,Reinstated DL Montez Sweat from the active/non-football illness list.,espn_transactions_api
+2026,2026-07-28,31,CHI,Chicago Bears,,,,,OTHER,Placed DB Elijah Hicks on the active/PUP list. Placed DL Montez Sweat on the active/non-football illness list.,espn_transactions_api
+2026,2026-08-02,31,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Signed T Sebastian Gutierrez. Waived DE Charles Snowden.,espn_transactions_api
+2026,2026-08-02,31,DET,Detroit Lions,,,,,OTHER,Reinstated DB Christian Izien from the active/non-football injury list.,espn_transactions_api
+2026,2026-08-01,31,DET,Detroit Lions,,,,,SIGNING,Signed LB Devin White to a 1-year contract.,espn_transactions_api
+2026,2026-07-27,31,DET,Detroit Lions,,,,,SIGNING,Signed LB Troy Reeder to a contract.,espn_transactions_api
+2026,2026-07-31,31,DET,Detroit Lions,,,,,WAIVE_RELEASE,Signed TE Anthony Fisker to a contract. Waived TE Zach Horton. Activated G Christian Mahogany from the non-football injury list.,espn_transactions_api
+2026,2026-07-28,31,DET,Detroit Lions,,,,,WAIVE_RELEASE,Released DL Jay Tufele. Placed DB Christian Izien on the active/non-football illness list. Placed OL Christian Mahogany on the active/non-football injury list.,espn_transactions_api
+2026,2026-08-02,31,GB,Green Bay Packers,,,,,OTHER,Reinstated DB Kamal Hadden from the active/PUP list.,espn_transactions_api
+2026,2026-07-29,31,GB,Green Bay Packers,,,,,OTHER,Reinstated G Aaron Banks and DT Nazir Stackhouse from the active/PUP list. Placed WR Brenden Rice on the active/non-football injury list.,espn_transactions_api
+2026,2026-07-27,31,GB,Green Bay Packers,,,,,SIGNING,"Signed DT Devonte Wyatt to a contract extension. Placed RB Chris Brooks on the NFI list. Placed G Aaron Banks, CB Kamal Hadden, DT Javon Hargrave and TEs Tucker Kraft and Luke Musgrave on the PUP list.",espn_transactions_api
+2026,2026-07-31,31,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed LS Cal Adomitis and WR Kaden Prather to contracts. Released K Lenny Krieg. Waived/injured WR Brenden Rice. Activated TE Tucker Kraft from the PUP list.,espn_transactions_api
+2026,2026-07-28,31,GB,Green Bay Packers,,,,,WAIVE_RELEASE,"Signed K Lenny Krieg and TE Thomas Yassmin. Released EDGE Dante Barnett and K Lucas Havrisik. Placed Ts Brant Banks, LS Matt Orzech, LB Micah Parsons, DE Jordon Riley and DT Nazir Stackhouse on the active/PUP list.",espn_transactions_api
+2026,2026-07-28,31,LAR,Los Angeles Rams,,,,,SIGNING,Signed G Blake Hance to a contract.,espn_transactions_api
+2026,2026-07-27,31,LAR,Los Angeles Rams,,,,,SIGNING,Signed DB Alex Cook and G Bill Murray to contracts.,espn_transactions_api
+2026,2026-07-28,31,MIN,Minnesota Vikings,,,,,SIGNING,Signed S Jamal Adams and RB Jordan Mims to contracts. Signed T Brian O'Neill to a four-year contract extension through the 2030 season.,espn_transactions_api
+2026,2026-08-02,31,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Signed CB Jarod Washington. Waived RB Kejon Owens.,espn_transactions_api
+2026,2026-07-27,31,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Waived LB Keli Lawson and WR Luke Wysong. Placed RB Kejon Owens on the NFI list.,espn_transactions_api
+2026,2026-07-31,31,NO,New Orleans Saints,,,,,OTHER,Activated TE Cody Hardy from the non-football illness list.,espn_transactions_api
+2026,2026-08-02,31,NO,New Orleans Saints,,,,,RESERVE_MOVE,Placed WR Ja'Lynn Polk on the reserve/retired list.,espn_transactions_api
+2026,2026-07-28,31,NO,New Orleans Saints,,,,,WAIVE_RELEASE,"Signed DB Mike Reid. Waived DB Beanie Bishop. Placed DTs Keeshawn Silver and WR Mason Tipton on the PUP list. Placed DT Zxavian Harris, and TE Cody Hardy active/non-football injury.",espn_transactions_api
+2026,2026-07-28,31,NYG,New York Giants,,,,,SIGNING,Activated TE Thomas Fidone II and DT Sam Roberts from the active/PUP list. Signed DT Marlon Davidson and TE Tyler Moore.,espn_transactions_api
+2026,2026-07-30,31,NYG,New York Giants,,,,,WAIVE_RELEASE,Signed LB Anfernee Orji to a contract. Waived DL Ben Barten.,espn_transactions_api
+2026,2026-08-02,31,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Waived DE Ta'Quon Graham.,espn_transactions_api
+2026,2026-07-30,31,SEA,Seattle Seahawks,,,,,SIGNING,Activated DT Deven Eastern from the NFI list. Signed WR Kyre Duplessis to a contract.,espn_transactions_api
+2026,2026-08-02,31,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Reverted LB Ja'Markis Weston to injured reserve after he cleared waivers.,espn_transactions_api
+2026,2026-08-01,31,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Signed LB Joseph Vaughn. Waived LB Ja'Markis Weston.,espn_transactions_api
+2026,2026-07-28,31,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Waived RB Kenny McIntosh.,espn_transactions_api
+2026,2026-08-02,31,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed RB Khalil Herbert and DE Titus Leo. Released DB Eli Apple. Waived DE Mikail Kamara.,espn_transactions_api
+2026,2026-08-01,31,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Placed WR Ricky Pearsall on season-ending injured reserve. Signed WR Deebo Samuel. Reverted TE Tanner McLachlan to injured reserve after clearing waivers.,espn_transactions_api
+2026,2026-07-31,31,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed TE Josiah Deguara and WR Tenton Irwin to a one-year contracts. Waived DB Derrick Canteen and TE Tanner McLachlan. Activated DL Alfred Collins from the PUP list.,espn_transactions_api
+2026,2026-07-30,31,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Reverted DE William Bradley-King and LB Andrew Farmer to injured reserve after they cleared waivers.,espn_transactions_api
+2026,2026-07-29,31,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed DLs Quinton Bell and K.J. Henry to one-year contracts. Waived/injured DLs William Bradley-King and Andrew Farmer II.,espn_transactions_api
+2026,2026-07-27,31,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Waived DL Evan Anderson.,espn_transactions_api
+2026,2026-07-31,31,TB,Tampa Bay Buccaneers,,,,,OTHER,Reverted DT Haggai Chisom Ndubuisi to the PUP list.,espn_transactions_api
+2026,2026-07-30,31,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,Signed CB Ifeatu Melifonwu and DT Travis Shaw to contracts. Waived DT Haggai Chisom Ndubuisi.,espn_transactions_api
+2026,2026-07-29,31,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,Signed DT Travis Shaw. Waived DT Haggai Chisom Ndubuisi.,espn_transactions_api
+2026,2026-07-28,31,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,Waived DB Ja'Qurious Conley. Placed DB Chase Lucas and DT Haggai Chisom Ndubuisi on the active/PUP list.,espn_transactions_api
+2026,2026-07-23,30,ARI,Arizona Cardinals,,,,,OTHER,"Placed OT Paris Johnson, TE Tip Reiman, OLB Josh Sweat and CB Garrett Williams on the PUP list.",espn_transactions_api
+2026,2026-07-22,30,ARI,Arizona Cardinals,,,,,SIGNING,Signed QB Carson Beck to a rookie contract. Placed DT Kaleb Proctor on injured reserve. Signed DT Coziah Izzard to a contract.,espn_transactions_api
+2026,2026-07-22,30,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,"Waived DE C.J. Nunnally and WR Casey Washington. Released DT Elijah Garcia. Signed DE Keshawn Banks, DT Devonnsha Maxwell and WR Antwane Wells to contracts.",espn_transactions_api
+2026,2026-07-22,30,CAR,Carolina Panthers,,,,,OTHER,Placed LT Ikem Ekwonu and DT Tershawn Wharton on the active/PUP list.,espn_transactions_api
+2026,2026-07-21,30,CAR,Carolina Panthers,,,,,OTHER,"Placed CBs Jaycee Horn, Jaylon Guilbeau and Shemar Bartholomew on the active/non-football injury list.",espn_transactions_api
+2026,2026-07-23,30,CAR,Carolina Panthers,,,,,SIGNING,Signed TE Cade Prieskorn to a contract.,espn_transactions_api
+2026,2026-07-25,30,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,"Signed DTs Kyon Barrs and Elijah Garcia and DB DeCarlos Nicholson. Waived OLs Joshua Gray and Derrell Bailey, LB Jared Bartlett, and DB Mike Reid.",espn_transactions_api
+2026,2026-07-24,30,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Placed OLB Nic Scourton on injured reserve. Signed OLB Cam Gill and OT Derrell Bailey to contracts. Waived G Joshua Gray and WR Kobe Prentice. Claimed OT Ryan Hayes off waivers from Tennessee.,espn_transactions_api
+2026,2026-07-26,30,DET,Detroit Lions,,,,,OTHER,"Placed DBs Brian Branch, Kerby Joseph and TE Tyler Conklin on the active/PUP list.",espn_transactions_api
+2026,2026-07-22,30,DET,Detroit Lions,,,,,WAIVE_RELEASE,"Waived WR Kyre Duplessis. Signed WRs Tarik Black, Lucky Jackson and Tay Martin to contracts. Placed WR Kendrick Law on injured reserve.",espn_transactions_api
+2026,2026-07-26,30,LAR,Los Angeles Rams,,,,,OTHER,Placed G Justin Dedich on the active/non-football injury list. Placed DB Al'zillion Hamilton on the active/PUP list.,espn_transactions_api
+2026,2026-07-22,30,LAR,Los Angeles Rams,,,,,WAIVE_RELEASE,Waived C Chad Lindberg.,espn_transactions_api
+2026,2026-07-22,30,NO,New Orleans Saints,,,,,WAIVE_RELEASE,"Waived WR Damien Alford, DT Coziah Izzard, DB DaShawn Jones and K Mason Shipley. Signed K Tanner Brown, QB Hunter Dekkers, LB Cameron Jordan and WR Jalen Moreno-Cropper to contracts.",espn_transactions_api
+2026,2026-07-23,30,NYG,New York Giants,,,,,OTHER,Placed TE Thomas Fidone II and DL Sam Roberts and Roy Robertson-Harris on the PUP list.,espn_transactions_api
+2026,2026-07-25,30,NYG,New York Giants,,,,,WAIVE_RELEASE,Waived LB Cam Jones and DE C.J. Ravenell.,espn_transactions_api
+2026,2026-07-20,30,SEA,Seattle Seahawks,,,,,OTHER,"Placed S Nick Emmanwori, RB Kenny McIntosh and CB Tyrone Broden on the PUP list.",espn_transactions_api
+2026,2026-07-22,30,SEA,Seattle Seahawks,,,,,SIGNING,Placed RB Zach Charbonnet on the active/PUP list. Signed CB Brandon Johnson to a contract.,espn_transactions_api
+2026,2026-07-25,30,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Waived WR Tyrone Broden.,espn_transactions_api
+2026,2026-07-24,30,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Signed TE Nick Vannett to a contract. Waived CB Tyrone Broden.,espn_transactions_api
+2026,2026-07-21,30,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Signed CB Brandon Johnson and waived TE Harrison Bryant.,espn_transactions_api
+2026,2026-07-26,30,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,"Signed DT Kevin Givens to a one-year contract. Waived DT Evan Anderson. Placed DT Alfred Collins, DE Mykel Williams, RB Isaac Guerendo and TE George Kittle on the active/PUP list.",espn_transactions_api
+2026,2026-07-25,30,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed TE Tanner McLachlan. Waived TE Khalil Dinkins.,espn_transactions_api
+2026,2026-07-15,29,CAR,Carolina Panthers,,,,,RESERVE_MOVE,Placed QB Will Grier on the reserve/retired list.,espn_transactions_api
+2026,2026-07-17,29,CAR,Carolina Panthers,,,,,SIGNING,Re-signed OL Brady Christensen to a one-year contract.,espn_transactions_api
+2026,2026-07-13,29,GB,Green Bay Packers,,,,,SIGNING,Signed LB Isaiah McDuffie to a contract extension.,espn_transactions_api
+2026,2026-07-17,29,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Waived OL Zach Thomas.,espn_transactions_api
+2026,2026-07-10,28,CHI,Chicago Bears,,,,,SIGNING,Signed TE Sam Roush to a rookie contract.,espn_transactions_api
+2026,2026-07-06,28,DET,Detroit Lions,,,,,WAIVE_RELEASE,Waived CB Terrion Arnold.,espn_transactions_api
+2026,2026-07-08,28,NYG,New York Giants,,,,,RESERVE_MOVE,Placed CB Rico Payton on injured reserve.,espn_transactions_api
+2026,2026-07-07,28,NYG,New York Giants,,,,,WAIVE_RELEASE,Claimed DE C.J. Ravenell off waivers from Tennessee. Waived CB Rico Payton with an injury settlement,espn_transactions_api
+2026,2026-07-12,28,SF,San Francisco 49ers,,,,,OTHER,Announced the retirement of WR Trent Taylor.,espn_transactions_api
+2026,2026-07-07,28,SF,San Francisco 49ers,,,,,SIGNING,Signed DT Gracen Halton to a rookie contract.,espn_transactions_api
+2026,2026-06-29,27,DET,Detroit Lions,,,,,WAIVE_RELEASE,Released CB Terrion Arnold.,espn_transactions_api
+2026,2026-06-22,26,ARI,Arizona Cardinals,,,,,SIGNING,Signed DL Kaleb Proctor to a contract.,espn_transactions_api
+2026,2026-06-22,26,DAL,Dallas Cowboys,,,,,SIGNING,Signed DE Charles Snowden to a a contract.,espn_transactions_api
+2026,2026-06-22,26,NO,New Orleans Saints,,,,,WAIVE_RELEASE,Waived WR Damien Alford from injured reserve.,espn_transactions_api
+2026,2026-06-23,26,PHI,Philadelphia Eagles,,,,,SIGNING,Signed OT Markel Bell to a rookie contract.,espn_transactions_api
+2026,2026-06-18,25,ATL,Atlanta Falcons,,,,,SIGNING,Signed P Matthew Hayball to a contract.,espn_transactions_api
+2026,2026-06-16,25,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,"Signed LB Keshawn Banks, DT Devonnsha Maxwell and WR Antwane Wells Jr. to contracts. Released DT Elijah Garcia . Waived WR Casey Washington and DL CJ Nunnally IV.",espn_transactions_api
+2026,2026-06-16,25,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived TE Bryce Pierre.,espn_transactions_api
+2026,2026-06-15,25,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived TE Bryce Pierre from injured reserve.,espn_transactions_api
+2026,2026-06-16,25,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Signed WR Kaden Davis and LB Tony Fields II to contracts. Waived LB Dominique Hampton and K Gabriel Plascencia.,espn_transactions_api
+2026,2026-06-18,25,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,"Signed DE Charles Snowden, WR Denzel Mims, OL Chris Glaser, and CB Ameer Speed. Paced OL Matt Hennessey on IR. Waived CB Corey Ballentine and WR Romello Brinson.",espn_transactions_api
+2026,2026-06-18,25,DET,Detroit Lions,,,,,SIGNING,Signed WR Lawrence Keys to a contract.,espn_transactions_api
+2026,2026-06-16,25,DET,Detroit Lions,,,,,WAIVE_RELEASE,"Signed WRs Tay Martin, Tarik Black and Lucky Jackson to contracts. Placed WR Kendrick Law on injured reserve. Waived WR Kyre Duplessis.",espn_transactions_api
+2026,2026-06-16,25,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Waived WR Jakobie Keeney-James.,espn_transactions_api
+2026,2026-06-15,25,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed TE Luke Lachey to a contract. Waived WR Jakobie Keeney-James.,espn_transactions_api
+2026,2026-06-16,25,LAR,Los Angeles Rams,,,,,WAIVE_RELEASE,Waived/injured OL Chad Lindberg.,espn_transactions_api
+2026,2026-06-16,25,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Waived T Caleb Etienne and DL Minkell Doodwine. Signed TE Marshall Lang and DL Jahvaree Ritzie to contracts.,espn_transactions_api
+2026,2026-06-16,25,NO,New Orleans Saints,,,,,WAIVE_RELEASE,"Waived WR Damien Alford, DT Coziah Izzard, DB DaShawn Jones and K Mason Shipley. Signed K Tanner Brown, QB Hunter Dekkers, LB Cameron Jordan and WR Jalen Moreno-Cropper to contracts.",espn_transactions_api
+2026,2026-06-16,25,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Placed DE Joe Tryon-Shoyinka on the reserve/retired list. Signed WR Erik Ezukanma and DB Shaun Wade to contracts. Waived DB Brandon Johnson.,espn_transactions_api
+2026,2026-06-11,24,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Signed TE Kenny Yeboah to a contract. Released LB Stephen Dix Jr.,espn_transactions_api
+2026,2026-06-12,24,ATL,Atlanta Falcons,,,,,OTHER,Acquired T Wanya Morris and a 2027 seventh-round pick from Kansas City in exchange for a 2027 sixth-round pick.,espn_transactions_api
+2026,2026-06-11,24,ATL,Atlanta Falcons,,,,,OTHER,Placed OT Storm Norton on the PUP List.,espn_transactions_api
+2026,2026-06-12,24,CAR,Carolina Panthers,,,,,SIGNING,Signed WR Jalen Coker to a three-year contract extension.,espn_transactions_api
+2026,2026-06-09,24,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived TE Heinrich Haarberg.,espn_transactions_api
+2026,2026-06-08,24,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Signed UDFA WR Malick Meiga to a contract. Waived UDFA TE Heinrich Haarberg.,espn_transactions_api
+2026,2026-06-09,24,LAR,Los Angeles Rams,,,,,SIGNING,Signed OLB Tomon Fox to a contract.,espn_transactions_api
+2026,2026-06-10,24,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Signed DE A.J. Epenesa and G Michael Jordan to a contract. Waived LBs Isiah King and Chandler Martin. Released OLB Za'Darius Smith from the reserve/retired list.,espn_transactions_api
+2026,2026-06-09,24,SEA,Seattle Seahawks,,,,,SIGNING,Signed OT Bobby Hart to a contract.,espn_transactions_api
+2026,2026-06-08,24,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Signed OT Bobby Hart to a contract. Waived WR Levi Wentz.,espn_transactions_api
+2026,2026-06-10,24,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed RB Sincere McCormick to a one-year contract. Waived RB Jordan Mims.,espn_transactions_api
+2026,2026-06-08,24,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,Signed K B.T. Potter to a contract. Waived P Aidan Laros.,espn_transactions_api
+2026,2026-06-04,23,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Signed S Isaiah Oliver. Released K Joshua Karty.,espn_transactions_api
+2026,2026-06-03,23,DAL,Dallas Cowboys,,,,,SIGNING,Signed WR Jaden Smith to a contract.,espn_transactions_api
+2026,2026-06-01,23,DAL,Dallas Cowboys,,,,,SIGNING,Signed WR Romello Brinson to a contract.,espn_transactions_api
+2026,2026-06-04,23,DET,Detroit Lions,,,,,SIGNING,Signed WR Kyre Duplessis to a contract.,espn_transactions_api
+2026,2026-06-04,23,GB,Green Bay Packers,,,,,SIGNING,Signed WR Christian Watson to a contract extension.,espn_transactions_api
+2026,2026-06-04,23,LAR,Los Angeles Rams,,,,,SIGNING,Placed OL Chad Lindberg and OLB Eddie Walls III on injured reserve. Signed DT Time Kennan III to a rookie contract.,espn_transactions_api
+2026,2026-06-01,23,LAR,Los Angeles Rams,,,,,TRADE,"Traded LB Jared Verse, a 2027 first-round draft pick, a 2028 second-round draft pick and a 2029 third-round draft pick to Cleveland Browns for DE Myles Garrett.",espn_transactions_api
+2026,2026-06-02,23,LAR,Los Angeles Rams,,,,,WAIVE_RELEASE,Waived DE Jalen Logan-Redding.,espn_transactions_api
+2026,2026-06-01,23,MIN,Minnesota Vikings,,,,,OTHER,Named Nolan Teasley as the general manager.,espn_transactions_api
+2026,2026-06-04,23,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Waived WR Joaquin Davis. Signed WRs Trayvon Rudolph and Michael Briscoe to contracts.,espn_transactions_api
+2026,2026-06-02,23,NYG,New York Giants,,,,,WAIVE_RELEASE,Signed WR JuJu Smith-Schuster to a contract. Released K Jason Sanders.,espn_transactions_api
+2026,2026-06-01,23,NYG,New York Giants,,,,,WAIVE_RELEASE,"Signed WRs Odell Beckham Jr., Braxton Berrios and T Jarrod Gray to contracts. Released LS Zach Triner. Placed WR Gunner Olszewski on injured reserve. Placed T Jarrod Gray on the exempt/international player list.",espn_transactions_api
+2026,2026-06-03,23,PHI,Philadelphia Eagles,,,,,SIGNING,Signed LB Chandler Martin to a contract.,espn_transactions_api
+2026,2026-06-02,23,PHI,Philadelphia Eagles,,,,,TRADE,Signed RB Elijah Mitchell to a contract. Released DE Brandon Graham. Traded WR A.J. Brown to New England for a 2028 first-round pick and a conditional 2027 fifth-round pick.,espn_transactions_api
+2026,2026-06-05,23,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Signed DT Zion Wilson to a contract. Waived WR Brandon Hayes.,espn_transactions_api
+2026,2026-06-01,23,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Signed WR Samori Toure to a contract. Waived LB Chandler Martin.,espn_transactions_api
+2026,2026-06-01,23,SEA,Seattle Seahawks,,,,,SIGNING,Signed RN Jadarian Price to a contract.,espn_transactions_api
+2026,2026-06-02,23,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed S Ashtyn Davis to a one-year contract. Waived RB Jermar Jefferson.,espn_transactions_api
+2026,2026-05-26,22,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Waived RB Deion Hankins.,espn_transactions_api
+2026,2026-05-27,22,DAL,Dallas Cowboys,,,,,RESERVE_MOVE,Placed WR Parris Campbell on the reserve/retired list.,espn_transactions_api
+2026,2026-05-27,22,NO,New Orleans Saints,,,,,WAIVE_RELEASE,Waived DB Jeremiah McClendon. Signed LB Jackson Sirmon to a contract.,espn_transactions_api
+2026,2026-05-27,22,NYG,New York Giants,,,,,WAIVE_RELEASE,Signed OL Francis Mauigoa to a rookie contract. Waived DT Reid Holskey. Signed NT Josh Tupoa to a contract.,espn_transactions_api
+2026,2026-05-27,22,PHI,Philadelphia Eagles,,,,,SIGNING,Signed WR Brandon Hayes to a contract.,espn_transactions_api
+2026,2026-05-27,22,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Acquired WR Irvin Charles from the N.Y. Jets in exchange for a 2028 conditional seventh-round draft pick. Waived WR Trayvon Rudolph.,espn_transactions_api
+2026,2026-05-28,22,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Waived RB Sincere McCormick. Signed RBs Jermar Jefferson and Jordan Mims.,espn_transactions_api
+2026,2026-05-21,21,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived RB Montrell Johnson Jr. and LB Jamil Muhammad.,espn_transactions_api
+2026,2026-05-20,21,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Signed TE Heinrich Haarberg to a contract. Waived OLB Jamil Muhammad. Waived RB Montrell Johnson from injured reserve with an injury settlement.,espn_transactions_api
+2026,2026-05-18,21,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived TE Bryce Pierre. Waived RB Montrell Johnson Jr. with an injury designation.,espn_transactions_api
+2026,2026-05-21,21,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Signed RB Salvon Ahmed and DB Anthony Johnson Jr. to contracts. Waived RB Deion Hankins. Placed P Tory Taylor on the exempt/international player list.,espn_transactions_api
+2026,2026-05-21,21,DET,Detroit Lions,,,,,SIGNING,Signed LB Jack Campbell to a four-year contract extension.,espn_transactions_api
+2026,2026-05-20,21,DET,Detroit Lions,,,,,SIGNING,Signed WR Cedrick Wilson to a contract.,espn_transactions_api
+2026,2026-05-19,21,GB,Green Bay Packers,,,,,SIGNING,Signed CB Marlon Jones to a UDFA contract.,espn_transactions_api
+2026,2026-05-21,21,MIN,Minnesota Vikings,,,,,SIGNING,Signed DL Isaiahh Loudermilk to a contract.,espn_transactions_api
+2026,2026-05-19,21,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Waived WR Shaleak Knotts. Signed LB Jake Golday to a rookie contract.,espn_transactions_api
+2026,2026-05-18,21,PHI,Philadelphia Eagles,,,,,SIGNING,Signed TE Eli Stowers to a rookie contract.,espn_transactions_api
+2026,2026-05-21,21,TB,Tampa Bay Buccaneers,,,,,SIGNING,Signed LB Josiah Trotter to a rookie contract.,espn_transactions_api
+2026,2026-05-14,20,ARI,Arizona Cardinals,,,,,SIGNING,Signed LB Stephen Dix Jr. to a UDFA contract.,espn_transactions_api
+2026,2026-05-13,20,ARI,Arizona Cardinals,,,,,SIGNING,Signed OL Chase Bisontis to a rookie contract.,espn_transactions_api
+2026,2026-05-14,20,ATL,Atlanta Falcons,,,,,SIGNING,Signed CB Avieon Terrell and DT Antonio Thompson to rookie contracts.,espn_transactions_api
+2026,2026-05-11,20,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,"Signed OLs Brandon Walton and Layden Robinson, DT Ross Blacklock and LB Daveren Rayner to contracts. Released DT Ben Stille and WR Devin Thompkins. Waived RB Carlos Washington, and TE Brandon Frazier.",espn_transactions_api
+2026,2026-05-15,20,CAR,Carolina Panthers,,,,,SIGNING,Signed DT Lee Hunter to a rookie contract.,espn_transactions_api
+2026,2026-05-11,20,CHI,Chicago Bears,,,,,SIGNING,"Signed LBs Jon Rhattigan, Wayne Matthews, WRs Scott Miller,Kyron Hudson and DB Davison Igbinosun to contracts. Placed WR Squirrel White on the reserve/retired list.",espn_transactions_api
+2026,2026-05-11,20,DAL,Dallas Cowboys,,,,,SIGNING,Signed G D.J. Wingfield to a contract.,espn_transactions_api
+2026,2026-05-12,20,DET,Detroit Lions,,,,,SIGNING,"Signed T Blake Miller, DE Derrick Moore, LB Jimmy Rolder, DB Keith Abney II, WR Kendrick Law and DTs Skyler Gill-Howard and Tyre West to rookie contracts. Signed QB Luke Altmyer, T Melvin Priestly, TE Miles Kitselman, DT Aidan Keanaaina, DEsAnthony Lucas and Eric O'Neil, DE Erick Hunter and DBs Aamaris Brown and De'Shawn Rucker to UDFA contracts.",espn_transactions_api
+2026,2026-05-14,20,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed CB Brandon Cisse to a rookie contract. Claimed WR Brenden Rice off waivers from Las Vegas.,espn_transactions_api
+2026,2026-05-13,20,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Claimed CB MJ Devonshire Jr. off waivers from Buffalo. Released DT James Ester. Claimed WR Brenden Rice off waivers from Las Vegas.,espn_transactions_api
+2026,2026-05-12,20,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Claimed DB M.J. Devonshire off waivers from Buffalo and TE Luke Lachey off waivers from Houston.,espn_transactions_api
+2026,2026-05-11,20,MIN,Minnesota Vikings,,,,,SIGNING,"Signed LB Bangally Kamara, WR Jauan Jennings and DL Smith Vilbert to contracts.",espn_transactions_api
+2026,2026-05-14,20,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Signed WR Terrill Davis to a contract. Waived OLB Jordan Botelho.,espn_transactions_api
+2026,2026-05-11,20,NO,New Orleans Saints,,,,,SIGNING,Signed DT Christen MIller to a contract.,espn_transactions_api
+2026,2026-05-13,20,NO,New Orleans Saints,,,,,WAIVE_RELEASE,Waived/injured Nick Saldiveri.,espn_transactions_api
+2026,2026-05-12,20,NO,New Orleans Saints,,,,,WAIVE_RELEASE,Waived G Nick Saldiveri. Signed WR Brock Rechsteiner to a contract.,espn_transactions_api
+2026,2026-05-14,20,NYG,New York Giants,,,,,SIGNING,Signed OLB Khalid Kareem to a contract. Placed CB Thaddeus Dixon on IR.,espn_transactions_api
+2026,2026-05-12,20,SEA,Seattle Seahawks,,,,,SIGNING,Signed DE Dante Fowler Jr. to a contract.,espn_transactions_api
+2026,2026-05-14,20,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Signed WRs Rashad Rochelle and Trayvon Rudolph to UDFA contracts. Waived WR Michael Briscoe with a designation of failing to disclose a physical condition.,espn_transactions_api
+2026,2026-05-11,20,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Released LB Milo Eifler. Signed DB Larry Worth.,espn_transactions_api
+2026,2026-05-12,20,TB,Tampa Bay Buccaneers,,,,,SIGNING,"Signed QB Jalon Daniels, RB Kadarius Calloway, WRs Dean Patterson and Eric Rivers Jr., TE Kenny Fletcher Jr., OL Henry Lutovsky and Paul Rubelt, DL Josiah Green and Deshawn McKnight, LBs Caden Fordham, Javin Wright, Yasir Holmes and Jack Pyburn, CB Ayden Garnes, S Ja'Qurious Conley and P Aidan Laros to UDFA contracts.",espn_transactions_api
+2026,2026-05-11,20,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,"Claimed LB John Bullock off waivers from Indianapolis. Waived RBs Owen Wright, Noah Short, Michael Wiley and LS Wesley Brown Released LB Benton Whitley. Signed RB Kadarius Calloway, LS Scott Daly, DE Yasir Holmes, WR Dean Patterson and LB Javin Wright.",espn_transactions_api
+2026,2026-05-08,19,ARI,Arizona Cardinals,,,,,SIGNING,Signed RB Jeremiyah Love to a rookie contract.,espn_transactions_api
+2026,2026-05-07,19,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,"Signed WR Reggie Virgil, LB Karson Sharar and OL Jayden Williams to contracts. Released WR Andre Baccellia. Placed OL Valentin Senn on the exempt/international player list.",espn_transactions_api
+2026,2026-05-07,19,ATL,Atlanta Falcons,,,,,SIGNING,Signed CB Darren Hall to a contract. Signed TE Kyle Pitts to a franchise tag contract.,espn_transactions_api
+2026,2026-05-07,19,CAR,Carolina Panthers,,,,,SIGNING,"Signed CBs Jaylon Guilbeau, Cam Miller, Devonta Smith, Will Lee III and DTs Aaron Hall, Parker Petersen, Lee Hunter, OTs Isaia Glass, Albert Reese IV, QB Haynes King, WRs Kobe Prentice, Chris Brazzell II, LB Jackson Kuwatch, S Zakee Wheatley, C Sam Hecht, T Monroe Freeling and OLB Isaiah Smith to contracts.",espn_transactions_api
+2026,2026-05-08,19,CHI,Chicago Bears,,,,,SIGNING,"Signed WR Zavion Thomas, DB Malik Muhammad, LB Keyshaun Elliot and DL Jordan van den Berg to rookie contracts. Signed OL Caden Barnett, Jaren Kump and Mason Murphy, RB Coleman Bennett, DBs KC Eziomume and Skyler Thomas, LS Beau Gardner, WRs Omari Kelly and Squirrel White, TE Hayden Large, DL Jayden Loving, QB Miller Moss and K Gabriel Plascencia to UDFA contracts.",espn_transactions_api
+2026,2026-05-07,19,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Waived DB Zah Frazier.,espn_transactions_api
+2026,2026-05-08,19,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Released K Brandon McManus with a post-June 1 designation.,espn_transactions_api
+2026,2026-05-04,19,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed QB Tyrod Taylor to a contract. Released QB Desmond Ridder.,espn_transactions_api
+2026,2026-05-08,19,MIN,Minnesota Vikings,,,,,SIGNING,"Signed DL Caleb Banks and Domonique Orange, OL Caleb Tiernan, S Jakobe Thomas, FB Max Bredeson, CB Charles Demmings, RB Demond Claiborne and C Gavin Gerhardt to rookie contracts.",espn_transactions_api
+2026,2026-05-07,19,MIN,Minnesota Vikings,,,,,SIGNING,Signed WR Jauan Jennings to a contract.,espn_transactions_api
+2026,2026-05-08,19,NO,New Orleans Saints,,,,,SIGNING,"Signed WRs Jordan Tyson and Bryce Lance, TE Oscar Delp, G Jeremiah Wright, S Lorenzo Styles Jr., WR/RS Barion Brown and CB TJ Hall to rookie contracts.",espn_transactions_api
+2026,2026-05-07,19,NO,New Orleans Saints,,,,,SIGNING,Signed DL Zxavian Harris to a contract.,espn_transactions_api
+2026,2026-05-07,19,NYG,New York Giants,,,,,WAIVE_RELEASE,"Released LB Swayze Bozeman, WR Courtney Jackson and DL Elijah Chatman and Marlon Tuipulotu. Signed NT D.J Reader, WR Malachi Fields, DT Bobby Jamison-Travis, T J.C. Davis and LB Jack Kelly to contracts.",espn_transactions_api
+2026,2026-05-05,19,NYG,New York Giants,,,,,WAIVE_RELEASE,Claimed DT Zacch Pickens off waivers from Kansas City.,espn_transactions_api
+2026,2026-05-05,19,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Signed LB Isiah King to a UDFA contract. Waived DB Tucker Large.,espn_transactions_api
+2026,2026-05-08,19,SF,San Francisco 49ers,,,,,SIGNING,"Signed WR De’Zhaun Stribling, RB Kaelon Black, OL Carver Willis and Enrique Cruz Jr., CB Ephesians Prysock and LB Jaden Dugger to rookie contracts. Signed TE Khalil Dinkins, DL Bryson Eason, Mikail Kamara and James Thompson Jr., WRs Wesley Grimes and Will Pauling and S Jalen Stroman to UDFA contracts.",espn_transactions_api
+2026,2026-05-06,19,SF,San Francisco 49ers,,,,,SIGNING,Signed OT Trent Williams to a two-year contract.,espn_transactions_api
+2026,2026-05-08,19,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,"Signed LS Wesley Brown, S Ja'Qurious Conley, QB Jalon Daniels, TE Kenny Fletcher Jr., CB Ayden Garnes, DL Josiah Green, P Aidan Laros, G Henry Lutovsky, RB Deshawnn McKnight, OLB Jack yurn, WRs Eric Rivers Jr. and Noah Short and T Paul Rubelt to UDFA contracts. Claimed LB John Bullock off waivers from Indianapolis.",espn_transactions_api
+2026,2026-04-28,18,ARI,Arizona Cardinals,,,,,SIGNING,"Signed CB Elijah Culp, G Ka’ena Decambra, TE Jameson Geers, OLB Cameron Robertson, WR Harrison Wallace III, DL Damonic Williams and S Wydett Williams Jr. to contracts.",espn_transactions_api
+2026,2026-04-27,18,ATL,Atlanta Falcons,,,,,WAIVE_RELEASE,Waived P Trenton Gill.,espn_transactions_api
+2026,2026-04-29,18,CAR,Carolina Panthers,,,,,OTHER,Exercised the fifth-year option on QB Bryce Young.,espn_transactions_api
+2026,2026-04-30,18,DAL,Dallas Cowboys,,,,,SIGNING,Signed WR George Pickens to a franchise tag contract.,espn_transactions_api
+2026,2026-04-27,18,DAL,Dallas Cowboys,,,,,SIGNING,"Signed WRs Tyler Johnson, Marquez Valdes-Scantling and LB Curtis Robinson to contracts.",espn_transactions_api
+2026,2026-04-29,18,DET,Detroit Lions,,,,,SIGNING,Signed LB Joe Bachie and DT Jay Tufele.,espn_transactions_api
+2026,2026-05-01,18,GB,Green Bay Packers,,,,,SIGNING,"Signed DT Chris McCellan, EDGE Dani Dennis-Sutton, C/G, Jager Burton, CB Domani Jackson and K Trey Smack to rookie contracts. Signed Gs Dylan Barrett, Josh Gesky and Dillon Wade, QB Kyron Jones, EDGE Nyjalik Kelly, S Murvin Kenion, TE RJ Maryland, RB Jaden Nixon, LB TJ Quinn and WR J. Michael Sturdivant to UDFA contracts.",espn_transactions_api
+2026,2026-04-28,18,LAR,Los Angeles Rams,,,,,SIGNING,"Signed DT Payton Zdroik, QB Matthew Caldwell, RB Dean Connors, OLs Austin Blaske, Chad Lindberg and Bryce Henderson, DL Jalen Logan-Redding, CBs Nyzier Fourqurean, Drey Norwood and Al’zillion Hamilton, DT Jaxson Moi, DB Nick Anderson, EDGE Eddie Walls III, OLBs Wesley Bailey and Darryl Peterson III, TEs Rohan Jones and Dan Villari and LB Nikhai Hill-Green to contracts.",espn_transactions_api
+2026,2026-04-27,18,MIN,Minnesota Vikings,,,,,OTHER,Exercised the fifth-year option on WR Jordan Addison.,espn_transactions_api
+2026,2026-04-30,18,MIN,Minnesota Vikings,,,,,SIGNING,Signed DT Eric Johnson to a contract.,espn_transactions_api
+2026,2026-04-29,18,MIN,Minnesota Vikings,,,,,SIGNING,Signed DL Eric Johnson II.,espn_transactions_api
+2026,2026-04-28,18,NO,New Orleans Saints,,,,,SIGNING,Signed LB Anfernee Jennings and CB Martin Emerson to contracts.,espn_transactions_api
+2026,2026-04-27,18,NO,New Orleans Saints,,,,,WAIVE_RELEASE,Waived WRs Samori Toure and Elijah Cooks and RB Evan Hull. Placed K Charlie Smth on the exempt/international player list.,espn_transactions_api
+2026,2026-04-30,18,NYG,New York Giants,,,,,SIGNING,Signed DTs Leki Fotu and Shelby Harris to contracts.,espn_transactions_api
+2026,2026-04-27,18,PHI,Philadelphia Eagles,,,,,OTHER,Exercised the fifth-year options on DL Jalen Carter and EDGE Nolan Smith.,espn_transactions_api
+2026,2026-05-01,18,PHI,Philadelphia Eagles,,,,,SIGNING,"Signed WR Makai Lemon, QB Cole Payton, G Micah Morris, S Cole Wisniewski, DT Uar Bernard, and OLB Keyshawn James-Newby to rookie contracts. Signed DBs Kapena Gushiken, Tucker Large and Maximus Pulley, LB Deontae Lawson, G Jaeden Roberts, LS Rocco Underwood, DE Joshua Weru and TE Dae'Quan Wright to UDFA contracts.",espn_transactions_api
+2026,2026-04-30,18,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Waived TE Jaheim Bell.,espn_transactions_api
+2026,2026-05-01,18,SEA,Seattle Seahawks,,,,,SIGNING,"Signed WRs Michael Briscoe and Levi Wentz, LBs Devean Deal, Aidan Hibbard and Marvin Jones Jr., TE Lance Mason and NT Uso Seumalo to UDFA contracts.",espn_transactions_api
+2026,2026-04-30,18,SEA,Seattle Seahawks,,,,,SIGNING,Signed TE Harrison Bryant to a contract.,espn_transactions_api
+2026,2026-04-27,18,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Released RB Cam Akers. Placed C Federico Maranges on the exempt/international player list.,espn_transactions_api
+2026,2026-04-27,18,SF,San Francisco 49ers,,,,,OTHER,Placed T Isaac Alarcon on the exempt/international player list.,espn_transactions_api
+2026,2026-04-28,18,SF,San Francisco 49ers,,,,,SIGNING,Signed RB Sincere McCormick and S Patrick McMorris to contracts.,espn_transactions_api
+2026,2026-05-01,18,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Waived CB Tre Tomlinson.,espn_transactions_api
+2026,2026-04-30,18,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Waived DB Tre'Vius Tomlinson.,espn_transactions_api
+2026,2026-04-27,18,TB,Tampa Bay Buccaneers,,,,,OTHER,Exercised the fifth-year option on DT Calijah Kancey.,espn_transactions_api
+2026,2026-04-20,17,CAR,Carolina Panthers,,,,,SIGNING,Signed WRs Jalen Coker and Brycen Tremayne to exclusive rights contracts.,espn_transactions_api
+2026,2026-04-20,17,DAL,Dallas Cowboys,,,,,SIGNING,Signed K Brandon Aubrey to a contract.,espn_transactions_api
+2026,2026-04-20,17,GB,Green Bay Packers,,,,,SIGNING,Signed G Donovan Jennings and DB Bo Melton to exclusive rights contracts.,espn_transactions_api
+2026,2026-04-20,17,LAR,Los Angeles Rams,,,,,SIGNING,Signed G Justin Dedich and WR Xavier Smith to exclusive rights contracts.,espn_transactions_api
+2026,2026-04-25,17,MIN,Minnesota Vikings,,,,,OTHER,"Agreed to terms with undrafted free agents CBs Marcus Allen, Da'Veawn Armstead and Tyreek Chappell, WRs Dillon Bell, Shaleak Knotts, Marcus Sanders and Luke Wysong, LBs Jordan Botelho, Keli Lawson, Cam'Ron Stewart and Arden Walker, DL Monkell Goodwine, OLs Tristan Leigh, Delby Lemieux and Tomas Rimac, S Jacob Thomas and P Brett Thorson.",espn_transactions_api
+2026,2026-04-20,17,MIN,Minnesota Vikings,,,,,SIGNING,Signed LB Ivan Pace to a contract.,espn_transactions_api
+2026,2026-04-22,17,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Waived DL Jaylon Hutchings.,espn_transactions_api
+2026,2026-04-26,17,NO,New Orleans Saints,,,,,SIGNING,"Signed RB CJ Donaldson, TE Cody Hardy, OTs Alan Herron and Alex Wollschlaeger, DE Michael Heldman, CBs DaShawn Jones and Jeremiah McLendon, NT KeeShawn Silver, K Mason Shipley and DT Jay’Viar Suggs to contracts.",espn_transactions_api
+2026,2026-04-25,17,NO,New Orleans Saints,,,,,TRADE,Acquired DE Tyree Wilson from trade with Las Vegas Raiders.,espn_transactions_api
+2026,2026-04-25,17,NYG,New York Giants,,,,,OTHER,Terminated all contracts with LB DeMarvin Leal.,espn_transactions_api
+2026,2026-04-20,17,NYG,New York Giants,,,,,OTHER,Acquired a 2026 first-round draft pick from Cincinnati Bengals for NT Dexter Lawrence.,espn_transactions_api
+2026,2026-04-24,17,PHI,Philadelphia Eagles,,,,,OTHER,Acquired LB Jonathan Greenard and a 2026 seventh-round pick in exchange for 2026 third-round pick and a 2027 third-round pick.,espn_transactions_api
+2026,2026-04-20,17,SEA,Seattle Seahawks,,,,,SIGNING,Signed DB Ty Okada to an exclusive rights contract.,espn_transactions_api
+2026,2026-04-26,17,SF,San Francisco 49ers,,,,,OTHER,"Agreed to terms with P Jack Boumeester, TE Khalil Dinkins, DLs Bryson Eason, Mikail Kamara and James Thompson, S Jalen Stroman and WRs Wesley Grimes and Will Pauling on contracts.",espn_transactions_api
+2026,2026-04-20,17,SF,San Francisco 49ers,,,,,SIGNING,Signed T Austen Pleasants to an exclusive rights contract.,espn_transactions_api
+2026,2026-04-17,16,ATL,Atlanta Falcons,,,,,OTHER,Acquire DT Maason Smith from Jacksonville in exchange for DT Ruke Orhorhoro.,espn_transactions_api
+2026,2026-04-13,16,ATL,Atlanta Falcons,,,,,SIGNING,Signed T Jawaan Taylor to a contract.,espn_transactions_api
+2026,2026-04-13,16,GB,Green Bay Packers,,,,,OTHER,Acquired a 2026 fifth-round pick and a 2027 sixth-round pick from Philadelphia in exchange for WR Dontayvion Wicks.,espn_transactions_api
+2026,2026-04-17,16,GB,Green Bay Packers,,,,,WAIVE_RELEASE,"Released TE McCallan Castles, CB Tyron Herring and LB Jamon Johnson.",espn_transactions_api
+2026,2026-04-14,16,MIN,Minnesota Vikings,,,,,SIGNING,Re-signed DE Jalen Redmond to a contract.,espn_transactions_api
+2026,2026-04-19,16,NYG,New York Giants,,,,,OTHER,Acquired a first-round draft pick from Cincinnati Bengals for DT Dexter Lawrence II.,espn_transactions_api
+2026,2026-04-13,16,NYG,New York Giants,,,,,SIGNING,Signed QB Bandon Allen to a contract.,espn_transactions_api
+2026,2026-04-13,16,PHI,Philadelphia Eagles,,,,,OTHER,Acquired WR Dontayvion Wicks from Green Bay Packers for a 2026 fifth-round pick and a 2027 sixth-round pick.,espn_transactions_api
+2026,2026-04-14,16,SF,San Francisco 49ers,,,,,SIGNING,Signed DE Cam Sample to a contract.,espn_transactions_api
+2026,2026-04-13,16,SF,San Francisco 49ers,,,,,SIGNING,Signed DB Jack Jones to a contract.,espn_transactions_api
+2026,2026-04-07,15,ARI,Arizona Cardinals,,,,,SIGNING,Signed K Joshua Karty and DL P.J. Mustipher to one-year contracts.,espn_transactions_api
+2026,2026-04-10,15,ATL,Atlanta Falcons,,,,,OTHER,Exercised the fifth-year option on RB Bijan Robinson.,espn_transactions_api
+2026,2026-04-08,15,ATL,Atlanta Falcons,,,,,RESERVE_MOVE,Placed T Kaleb McGary on the reserve/retired list.,espn_transactions_api
+2026,2026-04-07,15,ATL,Atlanta Falcons,,,,,SIGNING,Signed DE Elijah Garcia to a one-year contract.,espn_transactions_api
+2026,2026-04-06,15,DET,Detroit Lions,,,,,SIGNING,Signed DB Avonte Maddox to a contract.,espn_transactions_api
+2026,2026-04-09,15,NYG,New York Giants,,,,,SIGNING,Signed G Daniel Faalele to a contract.,espn_transactions_api
+2026,2026-04-07,15,NYG,New York Giants,,,,,SIGNING,Re-signed WR Ryan Miller to a contract.,espn_transactions_api
+2026,2026-04-06,15,NYG,New York Giants,,,,,WAIVE_RELEASE,"Signed G Lucas Patrick to a contract. Waived WR Da'Quan Felton and DBs Patrick McMorris, T.J. Moore and Myles Purchase.",espn_transactions_api
+2026,2026-04-06,15,PHI,Philadelphia Eagles,,,,,SIGNING,Signed DE Joe Tryon to a contract.,espn_transactions_api
+2026,2026-04-07,15,TB,Tampa Bay Buccaneers,,,,,SIGNING,Signed WR David Sills V and DT Rakeem Nunez-Roches to contracts.,espn_transactions_api
+2026,2026-04-06,15,TB,Tampa Bay Buccaneers,,,,,SIGNING,Signed T Justin Skule to a contract.,espn_transactions_api
+2026,2026-04-01,14,ATL,Atlanta Falcons,,,,,SIGNING,Signed DB Darnay Holmes and LB DeAngelo Malone to contracts.,espn_transactions_api
+2026,2026-04-01,14,DAL,Dallas Cowboys,,,,,SIGNING,Signed DE Jonathan Bullard to a contract.,espn_transactions_api
+2026,2026-03-31,14,DET,Detroit Lions,,,,,SIGNING,Signed S Chuck Clark to a contract.,espn_transactions_api
+2026,2026-03-30,14,NYG,New York Giants,,,,,WAIVE_RELEASE,Waived K Graham Gano with a failed physical.,espn_transactions_api
+2026,2026-03-31,14,PHI,Philadelphia Eagles,,,,,SIGNING,Signed LB Chandler Martin to a contract.,espn_transactions_api
+2026,2026-03-30,14,PHI,Philadelphia Eagles,,,,,SIGNING,Signed EDGE Joe Tyron-Shoyinka to a one-year contract.,espn_transactions_api
+2026,2026-04-02,14,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,Waived WR Jaden Smith.,espn_transactions_api
+2026,2026-03-23,13,ARI,Arizona Cardinals,,,,,SIGNING,Signed T Olisaemeka Udoh to a contract.,espn_transactions_api
+2026,2026-03-26,13,ATL,Atlanta Falcons,,,,,SIGNING,"Signed RBs Brian Robinson Jr., Tyler Goodson and QB Trevor Siemian to contracts.",espn_transactions_api
+2026,2026-03-24,13,CAR,Carolina Panthers,,,,,OTHER,Acquired a conditional 2027 seventh-round draft pick from Philadelphia Eagles for QB Andy Dalton.,espn_transactions_api
+2026,2026-03-27,13,DAL,Dallas Cowboys,,,,,SIGNING,Signed DB Derion Kendrick to a contract.,espn_transactions_api
+2026,2026-03-23,13,DAL,Dallas Cowboys,,,,,SIGNING,Re-signed CB Corey Ballentine to a contract.,espn_transactions_api
+2026,2026-03-25,13,DET,Detroit Lions,,,,,SIGNING,Signed G Ben Bartch to a contract.,espn_transactions_api
+2026,2026-03-24,13,DET,Detroit Lions,,,,,SIGNING,Signed QB Teddy Bridgewater to a contract.,espn_transactions_api
+2026,2026-03-23,13,GB,Green Bay Packers,,,,,SIGNING,Signed DE Arron Mosby to a contract.,espn_transactions_api
+2026,2026-03-25,13,LAR,Los Angeles Rams,,,,,SIGNING,Re-signed RB Ronnie Rivers to a contract.,espn_transactions_api
+2026,2026-03-23,13,LAR,Los Angeles Rams,,,,,SIGNING,Re-signed DL Larrell Murchison to a contract.,espn_transactions_api
+2026,2026-03-23,13,MIN,Minnesota Vikings,,,,,SIGNING,Signed P Johnny Hekker to a contract. Place RB C.J. Ham and WR Adam Thielen on the reserve/retired list.,espn_transactions_api
+2026,2026-03-26,13,NO,New Orleans Saints,,,,,SIGNING,Signed DB Terrell Burgess and QB Zach Wilson to contracts.,espn_transactions_api
+2026,2026-03-24,13,NYG,New York Giants,,,,,SIGNING,Signed LS Zach Triner to a contract.,espn_transactions_api
+2026,2026-03-23,13,NYG,New York Giants,,,,,SIGNING,Signed DT Sam Roberts to a contract.,espn_transactions_api
+2026,2026-03-29,13,PHI,Philadelphia Eagles,,,,,SIGNING,Signed EDGE Joe Tryon-Shoyinka to a one-year contract.,espn_transactions_api
+2026,2026-03-26,13,PHI,Philadelphia Eagles,,,,,SIGNING,Signed WR Elijah Moore to a contract.,espn_transactions_api
+2026,2026-03-24,13,PHI,Philadelphia Eagles,,,,,SIGNING,Acquired QB Andy Dalton from Carolina in exchange for a conditional 2027 seventh-round draft pick. Signed DB J.T. Gray to a contract.,espn_transactions_api
+2026,2026-03-23,13,PHI,Philadelphia Eagles,,,,,SIGNING,Signed DB Marcus Epps and TE Stone Smartt to contracts.,espn_transactions_api
+2026,2026-03-26,13,SEA,Seattle Seahawks,,,,,SIGNING,Signed LB Chazz Surratt to a contract.,espn_transactions_api
+2026,2026-03-24,13,SEA,Seattle Seahawks,,,,,SIGNING,Signed DBs D’Anthony Bell and Shemar Jean-Charles to contracts.,espn_transactions_api
+2026,2026-03-23,13,SEA,Seattle Seahawks,,,,,SIGNING,Signed LS Chris Stoll to a contract.,espn_transactions_api
+2026,2026-03-24,13,SF,San Francisco 49ers,,,,,SIGNING,Signed G Robert Jones and RB Patrick Taylor to contracts.,espn_transactions_api
+2026,2026-03-24,13,TB,Tampa Bay Buccaneers,,,,,SIGNING,Announced the retirement of LB Lavonte David. Signed LB Christian Rozeboom to a contract.,espn_transactions_api
+2026,2026-03-20,12,ARI,Arizona Cardinals,,,,,SIGNING,Signed OL Olisaemeka Udoh to a one-year contract.,espn_transactions_api
+2026,2026-03-18,12,ARI,Arizona Cardinals,,,,,SIGNING,Signed WR Devin Duvernay and TE Teagan Quitoriano to one-year contracts.,espn_transactions_api
+2026,2026-03-17,12,ARI,Arizona Cardinals,,,,,SIGNING,Signed DT Andrew Billings and LB Jack Gibbens to contracts.,espn_transactions_api
+2026,2026-03-16,12,ARI,Arizona Cardinals,,,,,SIGNING,"Signed S Andrew Wingard, DE L.J. Collier and RB Zonovan Knight to a contract.",espn_transactions_api
+2026,2026-03-20,12,ATL,Atlanta Falcons,,,,,OTHER,"Acquired S Sydney Brown, a 2027 fourth round draft pick and a 2027 sixth round draft pick from Philadelphia in exchange for a 2027 fourth round draft pick and a 2027 sixth round draft pick.",espn_transactions_api
+2026,2026-03-17,12,ATL,Atlanta Falcons,,,,,SIGNING,"Signed DE Da'Shawn Hand, LB Azeez Ojulari and WR Olamide Zaccheaus to contracts.",espn_transactions_api
+2026,2026-03-16,12,ATL,Atlanta Falcons,,,,,SIGNING,Signed DE Samson Ebukam to a contract.,espn_transactions_api
+2026,2026-03-19,12,CAR,Carolina Panthers,,,,,SIGNING,Signed P Sam Martin and S Nick Scott to contracts.,espn_transactions_api
+2026,2026-03-18,12,CHI,Chicago Bears,,,,,SIGNING,Signed DE James Lynch and LB Jack Sanborn to contracts.,espn_transactions_api
+2026,2026-03-16,12,CHI,Chicago Bears,,,,,SIGNING,Signed DB Jaylon Jones to a contract.,espn_transactions_api
+2026,2026-03-17,12,DAL,Dallas Cowboys,,,,,SIGNING,Signed DB Reddy Steward to a contract.,espn_transactions_api
+2026,2026-03-20,12,DET,Detroit Lions,,,,,SIGNING,Signed DE Payton Turner to a contract.,espn_transactions_api
+2026,2026-03-19,12,DET,Detroit Lions,,,,,SIGNING,"Re-signed DL Myles Adams to a contract. Signed DB Jonathan Jones, WR Greg Dortch and DT Myles Adams to contracts.",espn_transactions_api
+2026,2026-03-18,12,DET,Detroit Lions,,,,,SIGNING,Signed LBs Damone Clark and D.J. Wonnum to contracts.,espn_transactions_api
+2026,2026-03-16,12,DET,Detroit Lions,,,,,SIGNING,"Signed DB Roger McCreary, LB Malcolm Rodriguez and DB Rock Ya-Sin.",espn_transactions_api
+2026,2026-03-19,12,GB,Green Bay Packers,,,,,OTHER,"Hired Bobby Babich as secondary/pass game coordinator, Daniel Bullocks as CBs coach, Noah Pauley as WRs coach, Sam Siefkes as LBs coach, Scott Fuchs as defensive analyst, T.C. McCartney as offensive quality control coach and Will Smart as defensive quality control coach. Named DeMarcus Covington to OLBs/run game coordinator/assistant head coach - defense, Luke Getsy to QBs coach/assistant head coach - offense, Vince Oghobaase to DL coach, Rob Grosso to assistant WRs coach, Cory Harkey and Jeff Koonz to assistant special teams coach.",espn_transactions_api
+2026,2026-03-17,12,LAR,Los Angeles Rams,,,,,SIGNING,Signed LB Grant Stuard to a contract.,espn_transactions_api
+2026,2026-03-20,12,MIN,Minnesota Vikings,,,,,SIGNING,Signed T Ryan Van Demark to a contract.,espn_transactions_api
+2026,2026-03-19,12,MIN,Minnesota Vikings,,,,,SIGNING,Signed QB Carson Wentz to a contract.,espn_transactions_api
+2026,2026-03-17,12,MIN,Minnesota Vikings,,,,,SIGNING,Signed P Johnny Hekker to a one-year contract.,espn_transactions_api
+2026,2026-03-19,12,NO,New Orleans Saints,,,,,SIGNING,Re-signed DE Chris Rumph to a contract.,espn_transactions_api
+2026,2026-03-17,12,NO,New Orleans Saints,,,,,SIGNING,Signed RB Ty Chandler and DT John Ridgeway to contracts.,espn_transactions_api
+2026,2026-03-18,12,NYG,New York Giants,,,,,SIGNING,Signed WR Darnell Mooney and G Joshua Ezeudu to contracts.,espn_transactions_api
+2026,2026-03-16,12,NYG,New York Giants,,,,,SIGNING,Signed DB Jason Pinnock to a contract.,espn_transactions_api
+2026,2026-03-20,12,PHI,Philadelphia Eagles,,,,,OTHER,"Acquired a 2027 fourth round draft pick and a 2027 sixth round draft pick from Atlanta Falcons for S Sydney Brown, a 2027 fourth round draft pick and a 2027 sixth round draft pick.",espn_transactions_api
+2026,2026-03-19,12,PHI,Philadelphia Eagles,,,,,SIGNING,"Signed RB Dameon Pierce to a one-year contract. Signed WR Marquise Brown, P Braden Mann and RB Dameon Pierce to contracts.",espn_transactions_api
+2026,2026-03-16,12,PHI,Philadelphia Eagles,,,,,SIGNING,Signed LB Arnold Ebiketie to a contract.,espn_transactions_api
+2026,2026-03-20,12,SEA,Seattle Seahawks,,,,,OTHER,Exercised the 5th Year Option for WR Jaxon Smith-Njigba and CB Devon Witherspoon.,espn_transactions_api
+2026,2026-03-18,12,SEA,Seattle Seahawks,,,,,SIGNING,Signed WR Cody White to a one-year contract.,espn_transactions_api
+2026,2026-03-17,12,SEA,Seattle Seahawks,,,,,SIGNING,"Signed RB George Holani, DT Brandon Pili and CB Noah Igbinoghene to contracts.",espn_transactions_api
+2026,2026-03-16,12,SEA,Seattle Seahawks,,,,,SIGNING,Signed DB Rodney Thomas.,espn_transactions_api
+2026,2026-03-18,12,SF,San Francisco 49ers,,,,,SIGNING,"Signed DE Sam Okuayinonu, WR Christian Kirk, LB Garret Wallow and P Corliss Waitman to contracts.",espn_transactions_api
+2026,2026-03-17,12,SF,San Francisco 49ers,,,,,SIGNING,Signed CB Nate Hobbs to a contract.,espn_transactions_api
+2026,2026-03-16,12,SF,San Francisco 49ers,,,,,SIGNING,Signed LB Luke Gifford to a contract.,espn_transactions_api
+2026,2026-03-16,12,TB,Tampa Bay Buccaneers,,,,,SIGNING,Signed C Dan Feeney and TE Ko Kieft to contracts.,espn_transactions_api
+2026,2026-03-09,11,ARI,Arizona Cardinals,,,,,OTHER,"Agreed to terms with DL L.J. Collier, P Blake Gillikin, and K Chad Ryland to one-year contracts.",espn_transactions_api
+2026,2026-03-13,11,ARI,Arizona Cardinals,,,,,SIGNING,Signed WR Simi Fehoko to a one-year contract.,espn_transactions_api
+2026,2026-03-12,11,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,"Signed LS Casey Kreiter, QB Gardner Minshew II, OL Matt Pryor, DL Jonah Williams, RB Zonovan Knight and CB Starling Thomas V to one-year contracts. Signed RB Tyler Allgeier and OL Elijah Wilkinson to two-year contracts. Signed WR Kendrick Bourne to a two-year contract. Released C Evan Brown. Signed K Chad Ryland to a contract.",espn_transactions_api
+2026,2026-03-11,11,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,"Released QB Kyler Murray. Signed DL Roy Lopex to a two-year contract and OL Isaac Seumalo to a three-year contract,",espn_transactions_api
+2026,2026-03-09,11,ATL,Atlanta Falcons,,,,,OTHER,Terminated the contract of WR Darnell Mooney.,espn_transactions_api
+2026,2026-03-13,11,ATL,Atlanta Falcons,,,,,SIGNING,Signed QB Tua Tagovailoa to a one-year contract.,espn_transactions_api
+2026,2026-03-12,11,ATL,Atlanta Falcons,,,,,SIGNING,"Re-signed DT LaCale London to a contract. Signed P Jake Bailey, WR Jahan Dotson, K Nick Polk, LBs Christian Harris, LaCale London, Cameron Thomas and TE Austin Hooper to contracts.",espn_transactions_api
+2026,2026-03-13,11,CAR,Carolina Panthers,,,,,SIGNING,Signed LB Claudin Cerelus to a contract.,espn_transactions_api
+2026,2026-03-12,11,CAR,Carolina Panthers,,,,,SIGNING,"Signed C Luke Fortner, LBs Devin Lloyd, Jaelan Phillips and QB Kenny Pickett to contracts.",espn_transactions_api
+2026,2026-03-11,11,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived DT Popo Aumavae.,espn_transactions_api
+2026,2026-03-10,11,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,"Re-signed DE LaBryan Ray, WR David Moore, S Isaiah Simmons and OLB Thomas Incoom. Signed CB Robert Rochell to a contract. Released DT A’Shawn Robinson. Waived DT Popo Aumavae.",espn_transactions_api
+2026,2026-03-12,11,CHI,Chicago Bears,,,,,SIGNING,"Re-signed OL Jordan McFadden to a one-year contract. Signed CB Coby Bryant, LB Devin Bush, DT Neville Galimore, WR Kalif Raymond and OT Jedrick Wills to contracts.",espn_transactions_api
+2026,2026-03-12,11,DAL,Dallas Cowboys,,,,,OTHER,Acquired a 2026 seventh-round draft pick from Tennessee Titans for DL Solomon Thomas.,espn_transactions_api
+2026,2026-03-11,11,DAL,Dallas Cowboys,,,,,OTHER,Acquired DL Rashan Gary from Green Bay in exchange for a 2027 fourth-round draft pick.,espn_transactions_api
+2026,2026-03-13,11,DAL,Dallas Cowboys,,,,,SIGNING,Signed TE Princeton Fant and DE Tyrus Wheat to contracts.,espn_transactions_api
+2026,2026-03-09,11,DET,Detroit Lions,,,,,OTHER,Terminated the contract of OL Taylor Decker.,espn_transactions_api
+2026,2026-03-13,11,DET,Detroit Lions,,,,,SIGNING,Signed DB Izien Christian and LB Trevor Nowaske to contracts.,espn_transactions_api
+2026,2026-03-12,11,DET,Detroit Lions,,,,,SIGNING,Signed Gs Larry Borom and Cade Mays to contracts.,espn_transactions_api
+2026,2026-03-11,11,DET,Detroit Lions,,,,,WAIVE_RELEASE,Placed DE Josh Paschal on waivers.,espn_transactions_api
+2026,2026-03-13,11,GB,Green Bay Packers,,,,,SIGNING,Signed WR Skyy Moore to a contract. Signed DL Javon Hargrave to a contract.,espn_transactions_api
+2026,2026-03-12,11,GB,Green Bay Packers,,,,,SIGNING,Signed CB Benjamin St-Juste to a contract.,espn_transactions_api
+2026,2026-03-11,11,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Re-signed C/G Sean Rhyan to a contract. Released CB Nate Hobbs. Acquired LB Zaire Franklin from Indianapolis in exchange for DL Colby Wooden.,espn_transactions_api
+2026,2026-03-10,11,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Released C Elgton Jenkins.,espn_transactions_api
+2026,2026-03-09,11,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Released OL Elgton Jenkins.,espn_transactions_api
+2026,2026-03-12,11,LAR,Los Angeles Rams,,,,,SIGNING,Signed LS Joe Cardona and CB Jaylen Watson to contracts.,espn_transactions_api
+2026,2026-03-12,11,MIN,Minnesota Vikings,,,,,SIGNING,"Signed QB Kyler Murray, CBs James Pierre and Tavierre Thomas to contracts.",espn_transactions_api
+2026,2026-03-11,11,MIN,Minnesota Vikings,,,,,SIGNING,Signed S Tavierre Thomas and DLs Jonathan Allen and Javon Hargrave to contracts.,espn_transactions_api
+2026,2026-03-10,11,MIN,Minnesota Vikings,,,,,SIGNING,Signed LS Andrew DePaola to a contract.,espn_transactions_api
+2026,2026-03-09,11,MIN,Minnesota Vikings,,,,,SIGNING,Signed LB Eric Wilson to a contract. Tendered LB Ivan Pace Jr. to a one-year contract with a right-of-first-refusal designation. Tendered DL Jalen Redmond as an exclusive rights free agent. Re-signed RB Zavier Scott and OLB Bo Richter to contracts. Terminated the contract of C Ryan Kelly.,espn_transactions_api
+2026,2026-03-13,11,MIN,Minnesota Vikings,,,,,WAIVE_RELEASE,Waived C Zeke Correll.,espn_transactions_api
+2026,2026-03-12,11,NO,New Orleans Saints,,,,,SIGNING,"Signed OT David Edwards, LB Kaden Elliss, Dillon Radunz. TE Noah Fant, P and Ryan Wright to contracts.",espn_transactions_api
+2026,2026-03-13,11,NYG,New York Giants,,,,,SIGNING,Signed LB Tremaine Edmunds to a contract.,espn_transactions_api
+2026,2026-03-11,11,NYG,New York Giants,,,,,WAIVE_RELEASE,Waived DB Anthony Johnson.,espn_transactions_api
+2026,2026-03-10,11,NYG,New York Giants,,,,,WAIVE_RELEASE,Waived S Anthony Johnson Jr.,espn_transactions_api
+2026,2026-03-13,11,PHI,Philadelphia Eagles,,,,,SIGNING,Signed TE Johnny Mundt to contract.,espn_transactions_api
+2026,2026-03-12,11,PHI,Philadelphia Eagles,,,,,SIGNING,Signed CB Riq Woolen to a contract.,espn_transactions_api
+2026,2026-03-13,11,SEA,Seattle Seahawks,,,,,WAIVE_RELEASE,Released DB Tyler Hall. Signed RBs Brady Russell and Emanuel Wilson to contracts.,espn_transactions_api
+2026,2026-03-12,11,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Released DE Bryce Huff. Signed WR Mike Evans to a contract.,espn_transactions_api
+2026,2026-03-13,11,TB,Tampa Bay Buccaneers,,,,,SIGNING,Signed TE Ko Kieft to a contract extension. Signed QB Jake Browning and DE A'Shawn Robinson to contracts.,espn_transactions_api
+2026,2026-03-06,10,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Released DL Dalvin Tomlinson.,espn_transactions_api
+2026,2026-03-05,10,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Released LB Akeem Davis-Gaither and DL Bilal Nichols.,espn_transactions_api
+2026,2026-03-04,10,CAR,Carolina Panthers,,,,,OTHER,Tendered WRs Jalen Coker and Brycen Tremayne as exclusive rights free agents.,espn_transactions_api
+2026,2026-03-06,10,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Released LB Tremaine Edmunds. Placed C Drew Dalman on the reserve/retired list.,espn_transactions_api
+2026,2026-03-06,10,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Waived DT Perrion Winfrey.,espn_transactions_api
+2026,2026-03-05,10,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Waived DT Perrion Winfrey.,espn_transactions_api
+2026,2026-03-04,10,DET,Detroit Lions,,,,,OTHER,Tendered K Jake Bates as an exclusive rights free agent.,espn_transactions_api
+2026,2026-03-02,10,DET,Detroit Lions,,,,,WAIVE_RELEASE,Released OL Graham Glasgow.,espn_transactions_api
+2026,2026-03-04,10,GB,Green Bay Packers,,,,,SIGNING,Re-signed RB Chris Brooks to a two-year contract.,espn_transactions_api
+2026,2026-03-06,10,NYG,New York Giants,,,,,WAIVE_RELEASE,Released T James Hudson.,espn_transactions_api
+2026,2026-03-04,10,NYG,New York Giants,,,,,WAIVE_RELEASE,Released ILB Bobby Okereke.,espn_transactions_api
+2026,2026-03-02,10,PHI,Philadelphia Eagles,,,,,SIGNING,Signed DE Ta’Quon Graham to a contract.,espn_transactions_api
+2026,2026-03-03,10,SEA,Seattle Seahawks,,,,,OTHER,Tendered S Ty Okada and RB George Holani.,espn_transactions_api
+2026,2026-02-28,9,DAL,Dallas Cowboys,,,,,OTHER,"Restructured the contracts of QB Dak Prescott, WR CeeDee Lamb, and G Tyler Smith.",espn_transactions_api
+2026,2026-02-27,9,DAL,Dallas Cowboys,,,,,OTHER,Placed the franchise tag on WR George Pickens.,espn_transactions_api
+2026,2026-02-26,9,DAL,Dallas Cowboys,,,,,OTHER,Placed a second-round tender on G T.J. Bass.,espn_transactions_api
+2026,2026-02-23,9,DET,Detroit Lions,,,,,OTHER,"Hired Mike Kafka as pass game coordinator, Steve Oliver as tight ends coach and Dan Skipper as offensive assistant. Named David Shaw pass game specialist.",espn_transactions_api
+2026,2026-02-27,9,GB,Green Bay Packers,,,,,OTHER,Hired Cam Achord as special teams coordinator.,espn_transactions_api
+2026,2026-02-23,9,LAR,Los Angeles Rams,,,,,OTHER,"Hired Kliff Kingsbury as assistant head coach, Brian Allen as assistant offensive line coach, Robert Woods as assistant wide receivers coach, Robert Wright as defensive assistant, Michael Hunter as assistant defensive backs coach, Brian Johnson as senior offensive assistant, Bubba Ventrone as special teams coordinator and Kyle Hoke as assistant special teams coach.",espn_transactions_api
+2026,2026-02-24,9,MIN,Minnesota Vikings,,,,,OTHER,"Hired Kyle Caskey as offensive quality control coach, Chili Davis as assistant special teams coach and Will Johnson as defensive assistant. Named Chenzo Funari assistant defensive backs coach, Dalmin Gibson assistant linebackers coach, Josh McCown offensive passing game coordinator/quarterbacks coach, Derron Montgomery assistant wide receivers coach, Chris O’Hara assistant offensive coordinator, Mike Siravo inside linebackers/senior defensive assistant and Jordan Traylor assistant quarterbacks/passing game specialist.",espn_transactions_api
+2026,2026-02-17,8,CAR,Carolina Panthers,,,,,SIGNING,Re-signed LS J.J. to a contract.,espn_transactions_api
+2026,2026-02-18,8,CHI,Chicago Bears,,,,,OTHER,Promoted Press Taylor to offensive coordinator.,espn_transactions_api
+2026,2026-02-19,8,CHI,Chicago Bears,,,,,WAIVE_RELEASE,Released LB Amen Ogbongbemiga.,espn_transactions_api
+2026,2026-02-21,8,DAL,Dallas Cowboys,,,,,SIGNING,Signed RB Javonte Williams to a three-year contract.,espn_transactions_api
+2026,2026-02-20,8,DAL,Dallas Cowboys,,,,,WAIVE_RELEASE,Released LB Logan Wilson.,espn_transactions_api
+2026,2026-02-18,8,LAR,Los Angeles Rams,,,,,SIGNING,Re-signed T David Quessenberry to a one-year contract.,espn_transactions_api
+2026,2026-02-10,7,ATL,Atlanta Falcons,,,,,OTHER,Hired Ricky Manning as assistant defensive backs coach and LaTroy Lewis as assistant defensive line coach.,espn_transactions_api
+2026,2026-02-10,7,LAR,Los Angeles Rams,,,,,OTHER,Announced the retirement of OT Rob Havenstein.,espn_transactions_api
+2026,2026-02-13,7,NYG,New York Giants,,,,,SIGNING,Signed WR Courtney Jackson to a reserve/futures contract.,espn_transactions_api
+2026,2026-02-13,7,SEA,Seattle Seahawks,,,,,SIGNING,Signed DE Jalan Gaines to a reserve/futures contract.,espn_transactions_api
+2026,2026-02-12,7,SEA,Seattle Seahawks,,,,,SIGNING,"Signed RBs Cam Akers, Velus Jones Jr. and RB Jacardia Wright, WRs Tyrone Broden, Montorie Foster and Ricky White III, T Logan Brown, CB Tyler Hall, S Maxen Hook, C Federico Maranges, LBs Chris Paul Jr., Jamie Sheriff and LB Ja’Markis Weston, DE J.R. Singleton and NT Bubba Thomas to reserve/futures contracts.",espn_transactions_api
+2026,2026-02-05,6,CHI,Chicago Bears,,,,,SIGNING,Re-signed ERFA OT Theo Benedet to a one-year contract.,espn_transactions_api
+2026,2026-02-02,6,DAL,Dallas Cowboys,,,,,SIGNING,Signed QB Will Grier to a reserve/futures contract.,espn_transactions_api
+2026,2026-02-02,6,GB,Green Bay Packers,,,,,OTHER,Hired Jonathan Gannon as defensive coordinator.,espn_transactions_api
+2026,2026-02-05,6,LAR,Los Angeles Rams,,,,,SIGNING,Signed RB Jordan Waters to a reserve/futures contract.,espn_transactions_api
+2026,2026-02-03,6,LAR,Los Angeles Rams,,,,,SIGNING,Signed DB Alex Johnson to a reserve/futures contract.,espn_transactions_api
+2026,2026-02-02,6,LAR,Los Angeles Rams,,,,,SIGNING,Signed head coach Sean McVay and general manager Les Snead to multiyear contract extensions.,espn_transactions_api
+2026,2026-02-03,6,MIN,Minnesota Vikings,,,,,OTHER,"Hired Gerald Alexander as defensive passing game coordinator/defensive backs, Ryan Nielsen as defensive running game coordinator and Frank Smith as assistant head coach. Promoted Keith Carter to offensive line coach.",espn_transactions_api
+2026,2026-02-03,6,SEA,Seattle Seahawks,,,,,RESERVE_MOVE,Reinstated LB Chazz Surratt from injured reserve and placed OT Amari Kight on injured reserve.,espn_transactions_api
+2026,2026-02-01,5,ARI,Arizona Cardinals,,,,,OTHER,Hired Mike LaFleur as head coach on a five-year contract.,espn_transactions_api
+2026,2026-01-26,5,ATL,Atlanta Falcons,,,,,OTHER,Hired Craig Aukerman as special teams coordinator.,espn_transactions_api
+2026,2026-01-27,5,CHI,Chicago Bears,,,,,SIGNING,Signed DE Jamree Kromah to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-29,5,DET,Detroit Lions,,,,,SIGNING,Signed TE Thomas Gordon to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-30,5,GB,Green Bay Packers,,,,,SIGNING,"Signed general manager Brian Gutekunst, head coach Matt LaFleur and executive vice president/director of football operations Russ Ball to multi-year contract extensions.",espn_transactions_api
+2026,2026-01-26,5,LAR,Los Angeles Rams,,,,,SIGNING,"Signed Ts A.J. Arcuri and Dylan McMahon, WRs Tru Edwards, Brennan Presley and Tyler Scott, DBs Tanner Ingle and Cam Lampkin, LB Eli Neal, DT Bill Norton and TE Mark Redman to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-30,5,MIN,Minnesota Vikings,,,,,OTHER,Fired general manager Kwesi Adofo-Mensah.,espn_transactions_api
+2026,2026-01-20,4,ATL,Atlanta Falcons,,,,,OTHER,Named Bill Callahan offensive line coach.,espn_transactions_api
+2026,2026-01-21,4,ATL,Atlanta Falcons,,,,,SIGNING,Signed TE Joshua Simon to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-19,4,CAR,Carolina Panthers,,,,,SIGNING,Signed CB Michael Reid to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-21,4,CHI,Chicago Bears,,,,,SIGNING,Signed TE Qadir Ismail to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-20,4,CHI,Chicago Bears,,,,,SIGNING,"Signed WRs Maurice Alexander and JP Richardson, RB Brittain Brown, TEs Stephen Carlson and Nikola Kalinic, LS Luke Elkin, DBs Dallis Flowers, Dontae Manning and Gervarrius Owens, DLs Jonathan Garvin and Jeremiah Martin, LBs Dominique Hampton and Nephi Sewell and OL Kyle Hergel to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-20,4,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Signed DL Jaden Crumedy and QB Kyle McCord to reserve/futures contracts. Released CB Trevon Diggs.,espn_transactions_api
+2026,2026-01-22,4,LAR,Los Angeles Rams,,,,,SIGNING,Designated OT Rob Havenstein to return from injured reserve.,espn_transactions_api
+2026,2026-01-21,4,LAR,Los Angeles Rams,,,,,SIGNING,Signed DB Nate Valcarcel to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-21,4,MIN,Minnesota Vikings,,,,,SIGNING,Signed defensive coordinator Brian Flores to a contract extension.,espn_transactions_api
+2026,2026-01-22,4,NYG,New York Giants,,,,,SIGNING,Signed LB DeMarvin Leal to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-21,4,PHI,Philadelphia Eagles,,,,,SIGNING,Signed TE Jaheim Bell to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-20,4,PHI,Philadelphia Eagles,,,,,SIGNING,Signed DB Ambry Thomas to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-23,4,SEA,Seattle Seahawks,,,,,RESERVE_MOVE,Placed G Bryce Cabeldue and RB Zach Charbonnet on injured reserve. Activated RB George Holani and TE Elijah Arroyo from injured reserve.,espn_transactions_api
+2026,2026-01-21,4,SEA,Seattle Seahawks,,,,,SIGNING,Designated RB George Holani to return from injured reserve.,espn_transactions_api
+2026,2026-01-22,4,SF,San Francisco 49ers,,,,,SIGNING,Signed TE Hayden Rucci to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-21,4,SF,San Francisco 49ers,,,,,SIGNING,Signed OL Zachary Thomas to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-20,4,SF,San Francisco 49ers,,,,,SIGNING,"Signed Ts Isaac Alarcón and Brandon Parker, DTs Evan Anderson and Sebastian Valdez, DBs Eli Apple, Derrick Canteen and Darrick Forrest, LBs Andrew Farmer and Jalen Graham, WRs Junior Bergen and Malik Turner, DE William Bradley-King, QB Adrian Martinez and C Drake Nugent to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-14,3,ARI,Arizona Cardinals,,,,,SIGNING,Signed WR Ihmir Smith-Marsette to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-12,3,CAR,Carolina Panthers,,,,,SIGNING,"Signed G Ja’Tyre Carter, G Saahdiq Charles, WR Dan Chisena, RB Montrell Johnson, OLB Jamil Muhammad, LB Maz Mwansa, TE Bryce Pierre, WR Ja’seem Reed, S Demani Richardson, WR Ainias Smith, RB Anthony Tyus, LB Jacoby Windmon, LB Jared Bartlett, CB Tyrek Funderburk, and G Joshua Gray to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-14,3,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Waived S D’Anthony Bell.,espn_transactions_api
+2026,2026-01-13,3,CHI,Chicago Bears,,,,,SIGNING,Reinstated T Braxton Jones from injured reserve. Signed LB Jalen Reeves-Maybin to the active roster. Placed LBs T.J. Edwards and Ozzy Trapilo on injured reserve. Signed LB Nephi Sewell to the practice squad.,espn_transactions_api
+2026,2026-01-13,3,GB,Green Bay Packers,,,,,SIGNING,Signed WR Isaiah Neyor to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-12,3,GB,Green Bay Packers,,,,,SIGNING,"Signed T Brant Banks, DL Dante Barnett, G Karsen Barnhart, DL Anthony Campbell, TE McCallan Castles, T Dalton Cooper, TE Drake Dabney, DL James Ester, K Lucas Havrisik, CB Tyron Herring, LB Jamon Johnson, RB Damien Martinez, S Mark Perry, WR Will Sheppard, RB Pierre Strong Jr. and TE Messiah Swinson to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-12,3,LAR,Los Angeles Rams,,,,,RESERVE_MOVE,Placed CB Ahkello Witherspoon on injured reserve.,espn_transactions_api
+2026,2026-01-15,3,LAR,Los Angeles Rams,,,,,SIGNING,Signed G Wyatt Bowles and WR Mario Williams to reserve/futures contracts.,espn_transactions_api
+2026,2026-01-13,3,LAR,Los Angeles Rams,,,,,SIGNING,Promoted OLB Nick Hampton from the practice squad to the active roster. Signed DB Alex Johnson to the practice squad. Placed CB Ahkello Witherspoon on injured reserve.,espn_transactions_api
+2026,2026-01-14,3,NO,New Orleans Saints,,,,,SIGNING,Signed DE Myles Cole to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-13,3,NYG,New York Giants,,,,,SIGNING,Signed DT Marlon Tuipulotu to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-15,3,PHI,Philadelphia Eagles,,,,,SIGNING,Signed DE Jose Ramirez to a contract.,espn_transactions_api
+2026,2026-01-14,3,PHI,Philadelphia Eagles,,,,,SIGNING,Signed S Andre’ Sam to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-12,3,PHI,Philadelphia Eagles,,,,,SIGNING,"Signed LB Chance Campbell, DB Tariq Castro-Fields, WR Danny Gray, DT Gabe Hall, DB Brandon Johnson, C Jake Majors, T Hollin Pierce, and WR Quez Watkins to reserves/futures contracts.",espn_transactions_api
+2026,2026-01-13,3,PHI,Philadelphia Eagles,,,,,WAIVE_RELEASE,Released offensive coordinator Kevin Patullo.,espn_transactions_api
+2026,2026-01-13,3,SEA,Seattle Seahawks,,,,,SIGNING,Designated LB Chazz Surratt to return from injured reserve.,espn_transactions_api
+2026,2026-01-13,3,SF,San Francisco 49ers,,,,,SIGNING,Designated LB Fred Warner to return from injured reserve.,espn_transactions_api
+2026,2026-01-14,3,SF,San Francisco 49ers,,,,,WAIVE_RELEASE,Signed S Darrick Forrest and TE Hayden Rucci to the practice squad. Released WR Javon Baker from the practice squad. Signed WR Colton Dowell to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-05,2,ARI,Arizona Cardinals,,,,,OTHER,Fired head coach Jonathan Gannon.,espn_transactions_api
+2026,2026-01-10,2,ATL,Atlanta Falcons,,,,,OTHER,Hired Matt Ryan as president of football.,espn_transactions_api
+2026,2026-01-05,2,ATL,Atlanta Falcons,,,,,SIGNING,"Signed WR Chris Blair, P Trenton Gill, DBs Tysheem Johnson and A.J. Woods, DT Ben Stille, OT Andrew Stueber and RB Carlos Washington to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-09,2,CAR,Carolina Panthers,,,,,RESERVE_MOVE,Activated G Robert Hunt from injured reserve.,espn_transactions_api
+2026,2026-01-08,2,CAR,Carolina Panthers,,,,,WAIVE_RELEASE,Released DB Mike Reid from the practice squad. Signed DB Demani Richardson to the practice squad.,espn_transactions_api
+2026,2026-01-10,2,CHI,Chicago Bears,,,,,RESERVE_MOVE,Activated CB Kyler Gordon from injured reserve.,espn_transactions_api
+2026,2026-01-08,2,CHI,Chicago Bears,,,,,SIGNING,Placed LB Ty Summers on the practice injured list. Signed LB Jalen Reeves-Maybin to the practice squad.,espn_transactions_api
+2026,2026-01-05,2,DET,Detroit Lions,,,,,SIGNING,"Signed OLs Devin Cochran and Mason Miller, WRs Malik Cunningham and Jackson Meeks, DE Ahmed Hassanein, TE Zach Horton, RB Jabari Small, DL Chris Smith and S Loren Strickland to reserve/futures contracts. Re-signed OL Michael Niese, RB Jacob Saylors and CB Nick Whiteside.",espn_transactions_api
+2026,2026-01-07,2,GB,Green Bay Packers,,,,,SIGNING,Reinstated LB Nick Niemann from injured reserve. Placed WR Bo Melton on injured reserve. Signed DL Anthony Campbell to the practice squad. Placed WR Will Sheppard on the practice squad injured list.,espn_transactions_api
+2026,2026-01-07,2,MIN,Minnesota Vikings,,,,,SIGNING,Signed DT Jaylon Hutchings and LB Jacob Roberts to reserve/futures contracts.,espn_transactions_api
+2026,2026-01-05,2,MIN,Minnesota Vikings,,,,,SIGNING,"Signed WRs Dontae Fleming, Joaquin Davis and Jeshaun Jones, S Kahlef Hailassie, LB Josh Ross, G Vershon Lee, T Caleb Etienne and TE Bryson Nesbit to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-07,2,NO,New Orleans Saints,,,,,SIGNING,Signed WR Damien Alford to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-05,2,NO,New Orleans Saints,,,,,SIGNING,"Signed DBs Dalys Beanum, Beanie Bishop Jr. and Jayden Price, WR Elijah Cooks, S Elliott Davison, DT Coziah Izzard and Ts Easton Kilty and Barry Wesley to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-07,2,NYG,New York Giants,,,,,SIGNING,Signed G Jake Kubas to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-07,2,PHI,Philadelphia Eagles,,,,,SIGNING,Designated LB Azeez Ojulari to return from injured reserve.,espn_transactions_api
+2026,2026-01-07,2,SEA,Seattle Seahawks,,,,,SIGNING,Designated TE Elijah Arroyo to return from injured reserve.,espn_transactions_api
+2026,2026-01-07,2,SF,San Francisco 49ers,,,,,SIGNING,Promoted LB Eric Kendricks to the active roster. Placed LB Tatum Bethune on injured reserve. Signed LB Kyzir White to the practice squad. Designated WR Jacob Cowing to return from injured reserve. Signed LB Milo Eifler to a reserve/futures contract.,espn_transactions_api
+2026,2026-01-08,2,TB,Tampa Bay Buccaneers,,,,,SIGNING,"Signed S Marcus Banks, T Marshall Foerner, WR Garrett Greene, WR Dennis Houston, DT Nash Hutmacher, LB Nick Jackson, DT Jayson Jones, OLB Mohamed Kamara, C Ben Scott, LB Benton Whitley, RB Michael Wiley, CB Damarion Williams, RB Josh Williams, and RB Owen Wright to reserve/futures contracts.",espn_transactions_api
+2026,2026-01-02,1,ARI,Arizona Cardinals,,,,,RESERVE_MOVE,Placed WR Marvin Harrison Jr. on injured reserve.,espn_transactions_api
+2026,2026-01-03,1,ARI,Arizona Cardinals,,,,,SIGNING,Signed WR Tejhaun Palmer to the active roster.,espn_transactions_api
+2026,2026-01-01,1,ARI,Arizona Cardinals,,,,,WAIVE_RELEASE,Claimed LB Austin Keys off waivers from the Minnesota Vikings. Placed S Kitan Crawford on injured reserve. Released OL Tyler Cooper from the practice squad.,espn_transactions_api
+2026,2026-01-04,1,ATL,Atlanta Falcons,,,,,OTHER,Fired Head Coach Raheem Morris and General Manager Terry Fontenot.,espn_transactions_api
+2026,2026-01-01,1,ATL,Atlanta Falcons,,,,,SIGNING,Placed CB Mike Hughes on injured reserve. Signed OLB Khalid Kareem to the active roster.,espn_transactions_api
+2026,2026-01-03,1,DAL,Dallas Cowboys,,,,,SIGNING,"Placed G T.J. Bass, RB Malik Davis, and RB Javonte Williams on injured reserve. Activated CB Josh Butler and RB Phil Mafah from injured reserve. Signed LB Justin Barron to the active roster.",espn_transactions_api
+2026,2026-01-03,1,DET,Detroit Lions,,,,,RESERVE_MOVE,Placed OL Trystan Colon on injured reserve.,espn_transactions_api
+2026,2026-01-03,1,GB,Green Bay Packers,,,,,SIGNING,Signed WR Jakobie Keeney-James and G/C Lecitus Smith to the active roster. Placed G/T Donovan Jennings and WR Savion Williams on injured reserve.,espn_transactions_api
+2026,2026-01-01,1,GB,Green Bay Packers,,,,,WAIVE_RELEASE,Claimed CB Trevon Diggs off waivers from the Dallas Cowboys. Signed S Mark Perry to the practice squad. Placed TE McCallan Castles on practice squad injured list.,espn_transactions_api
+2026,2026-01-01,1,LAR,Los Angeles Rams,,,,,SIGNING,Signed S Quentin Lake to a three-year contract extension and designated him to return from injured reserve.,espn_transactions_api
+2026,2026-01-03,1,LAR,Los Angeles Rams,,,,,WAIVE_RELEASE,Activated TE Tyler Higbee from injured reserve. Waived DE Larrell Murchison.,espn_transactions_api
+2026,2026-01-02,1,MIN,Minnesota Vikings,,,,,SIGNING,Signed DL Taki Taimani to the active roster.,espn_transactions_api
+2026,2026-01-03,1,NO,New Orleans Saints,,,,,SIGNING,Signed TE Treyton Welch to the active roster.,espn_transactions_api
+2026,2026-01-02,1,NO,New Orleans Saints,,,,,SIGNING,"Placed WR Mason Tipton, DB Michael Davis, and TEs Jack Stoll and Zaire Mitchell-Paden on injured reserve. Signed WRs Ronnie Bell and Samori Toure and OLB Fadil Diggs to the active roster.",espn_transactions_api
+2026,2026-01-03,1,NYG,New York Giants,,,,,SIGNING,"Signed CB Jarrick Bernard-Converse, WR Xavier Gipson, and RB Dante Miller to the active roster. Placed CB Cor'Dale Flotts, DL Rakeem Nunez-Roches, and WR Wan'Dale Robinson on injured reserve.",espn_transactions_api
+2026,2026-01-01,1,PHI,Philadelphia Eagles,,,,,RESERVE_MOVE,Activated OT Cameron Williams from injured reserve.,espn_transactions_api
+2026,2026-01-02,1,TB,Tampa Bay Buccaneers,,,,,WAIVE_RELEASE,Signed OLB Jason Pierre-Paul to the active roster. Waived LB John Bullock. Activated DT Calijah Kancey from injured reserve.,espn_transactions_api

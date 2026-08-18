@@ -1,0 +1,18 @@
+# Core runtime deps for the MCP server + FAISS retrieval.
+# Install with: pip install -r requirements.txt
+numpy>=2,<2.6
+pandas
+# Pinned to the 1.x line: mcp 2.0 dropped the mcp.server.fastmcp.FastMCP API
+# this server (and the course's own Module-2 MCP demo) is built on.
+mcp[cli]==1.29.0
+faiss-cpu
+sentence-transformers
+
+# nfl_data_py is only used by scripts/fetch/*.py to (re)download source data,
+# not by the MCP server at runtime. Its own pin (numpy<2) conflicts with the
+# numpy>=2 wheels available for this Python version, so install it separately
+# with --no-deps, then its lightweight runtime deps directly:
+#   pip install --no-deps nfl_data_py
+#   pip install appdirs requests requests-cache
+# (fastparquet is only needed for a few nfl_data_py functions we don't use —
+# skip it unless a fetch script specifically errors asking for it.)

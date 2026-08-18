@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "champion-data": {
+      "command": ".venv/Scripts/python.exe",
+      "args": ["mcp_server/safe_server.py"],
+      "cwd": "."
+    }
+  }
+}
