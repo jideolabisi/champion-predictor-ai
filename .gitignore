@@ -4,4 +4,5 @@ __pycache__/
 venv/
 data/index/
 outputs/predictions/_working/
+outputs/.trace/
 .env

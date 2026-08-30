@@ -18,11 +18,12 @@ Code itself.
 
 | Generic harness component | This project |
 |---|---|
-| Skills | `.claude/skills/champion-predictor/SKILL.md` — orchestrates the full predict → critique → validate → regenerate loop |
-| Subagents | `.claude/agents/predictor.md` (primary, ReAct + tools), `.claude/agents/critic.md` (explanation-quality review, no tools) |
+| Skills | `.claude/skills/champion-predictor/SKILL.md` — orchestrates integrity check → DiD pre-gen → predict/what-if → DiD during-gen → critique → validate → DiD post-gen → finalize, with one shared regeneration counter (cap 2) |
+| Subagents | `.claude/agents/predictor.md` (primary, ReAct + tools; also evaluates user-named what-if scenarios), `.claude/agents/critic.md` (explanation-quality review, no tools), `.claude/agents/did.md` (defense-in-depth guardrail, no tools, invoked pre/during/post-generation) |
 | Memory | Predictor's short-term session context during a single prediction run; deliberately no long-term memory across runs (each prediction should be independent, per the checkpoint 2.1 design) |
 | MCP / Tools | `mcp_server/safe_server.py`, registered in `.mcp.json` |
 | Resources | `data/raw/*.csv`, `data/raw/unstructured/*.txt` |
+| Hooks | `scripts/hooks/enforce_iteration_cap.py` (`PreToolUse`), `scripts/hooks/capture_predictor_trace.py` (`SubagentStop`) |
 
 No GUI/web server/database — this is a CLI-driven deliverable, invoked via
 Claude Code. (A simple GUI may be added later; out of scope for now.)
@@ -45,6 +46,17 @@ Hybrid, not pure vector RAG:
   locally, since they're used only as a reasonableness check, not ground
   truth.
 
+Note on checkpoint 3.1 vs. this design: 3.1's original plan was chunked
+vector-RAG over *all six* structured sources (team stats, roster,
+transactions, coaching, management, injuries). This repo deliberately
+diverges from that — those six are served via exact-filter MCP tools
+instead, with FAISS reserved for the one genuinely unstructured source
+(financial narratives). This is an intentional refinement, not an
+oversight: it structurally eliminates the exact failure mode 3.1 itself
+flags (a record's relevant fields getting split across chunks) rather than
+just mitigating it statistically. Nothing later in the capstone revisits
+retrieval design, so this later, more specific decision stands.
+
 ## Validation-data isolation
 
 `data/validation/nfc_champions_2006_2025.csv` (the actual historical NFC
@@ -62,6 +74,73 @@ convention:
 - `.claude/agents/predictor.md`'s `tools:` list contains only `champion-data`
   MCP tools + `WebSearch`. `.claude/agents/critic.md`'s `tools:` list is
   empty.
+
+## Safety guardrails (checkpoint 6.1)
+
+A single defense-in-depth (DiD) subagent (`.claude/agents/did.md`) is
+invoked three times per run by `SKILL.md`, always as an LLM judgment call —
+not a regex/keyword script — per the finalized 6.1 design:
+
+- **Pre-generation**: scores the user's raw request for completeness and
+  fit to the agent's objective, and flags suspicious language (attempts to
+  get the system to skip its own checks, etc.). A low score or flagged
+  language pauses for human-in-the-loop (HITL) clarification before the
+  Predictor ever runs.
+- **During-generation**: reviews the Predictor's output plus its *actual*
+  captured tool-call/reasoning trace (see the new hook below — not a
+  self-report, since a compromised or hallucinating Predictor could vouch
+  for itself in a self-report) for unsupported certainty and suspicious
+  activity. A suspicion score ≥ 80 escalates to HITL immediately,
+  regardless of the regeneration cap.
+- **Post-generation**: checks the final explanation's factual claims
+  against that same trace (used as the retrieved tool/RAG evidence) to
+  catch unsupported claims.
+
+All three verdicts, plus the Critic's rating, the Predictor's self-reported
+`confidence` (a *separate* number from its outcome probability — how
+reliable it believes its own estimate is, following Kadavath et al. (2022),
+not how likely a team is to win), and the deterministic validator's
+verdict, feed **one shared regeneration counter, capped at 2** — not four
+independent retry loops. Every prediction's output `.md` file records which
+trigger(s) fired, so a later escalation-rate calculation is just scanning
+`outputs/predictions/*.md`, no separate metrics store needed.
+
+**Read-only + checksums**: `predictor.md` and `critic.md` already carry no
+`Write`/`Edit`/`Bash` in their `tools:` frontmatter, so they are
+structurally unable to modify input files — that's documentation, not new
+enforcement. `scripts/verify_data_integrity.py` adds what wasn't already
+true: a SHA-256 manifest (`data/.checksums.json`) checked before every run,
+which catches *at-rest* modification of a data file between fetch and use.
+It does **not** detect poisoning that happened upstream, before a fetch
+script wrote the file in the first place — that would need source-level
+trust verification, which is out of scope here. A mismatch pauses for HITL
+confirmation rather than auto-failing, since a legitimate re-fetch looks
+identical to tampering from the checksum's point of view.
+
+**New hook**: `scripts/hooks/capture_predictor_trace.py` (`SubagentStop`,
+matcher `predictor`) writes `outputs/.trace/predictor_latest.json` from the
+Predictor's real transcript, reusing the JSONL-walking approach
+`enforce_iteration_cap.py` already established. Same caveat as that hook:
+the underlying assumption (a project-level `SubagentStop` hook fires for a
+Task-invoked subagent) is not yet empirically verified — smoke-test before
+relying on it (see the script's own docstring).
+
+## Decision support (what-if mode)
+
+Per checkpoints 1.1/4.1: the Predictor also evaluates a **user-named**
+hypothetical change (a trade, a coaching hire, a front-office change) —
+never an agent-invented branch, per 4.1's CoT-not-ToT decision. Ask, e.g.:
+
+```
+/champion-predictor how would trading for a top-tier pass rusher affect
+the Eagles' NFC championship odds this season?
+```
+
+`SKILL.md` detects this as `WHAT_IF` mode, and the Predictor produces both
+a real baseline `probabilities` set and a hypothetical
+`adjusted_probabilities` set (renormalized across all 16 teams), plus a
+`delta_explanation`. Both sets are validated independently. Output goes to
+`outputs/predictions/whatif_<team>_<season>_<timestamp>.md`.
 
 ## Data sources
 
@@ -138,6 +217,13 @@ If any `.txt` files are added under `data/raw/unstructured/<source>/`,
 (re)build the FAISS index:
 ```
 .venv/Scripts/python.exe scripts/build_faiss_index.py
+```
+
+Whenever any file under `data/raw/` or `data/validation/` legitimately
+changes (a re-fetch, a new source added), regenerate the checksum baseline
+so the next run's integrity check doesn't flag it as a mismatch:
+```
+.venv/Scripts/python.exe scripts/verify_data_integrity.py --generate
 ```
 
 ## Running

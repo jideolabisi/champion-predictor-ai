@@ -3,10 +3,13 @@
 
 Per the checkpoint design, these checks must be real code, not LLM judgment:
   1. Probabilities must sum to ~100% (auto-renormalize within tolerance,
-     otherwise flag as a hard failure requiring regeneration).
+     otherwise flag as a hard failure requiring regeneration). Applied
+     independently to `probabilities` and, when present (what-if mode),
+     `adjusted_probabilities` — both sets must each sum to ~100 on their own.
   2. Top-3 predicted teams are compared against the predictor's own
      `consensus_snapshot.top3` (fan/analyst reasonableness check) via simple
-     overlap count.
+     overlap count. Applied to baseline `probabilities` only — consensus
+     data describes the real season, not a hypothetical.
 
 Usage:
   python scripts/validate_predictions.py --input path/to/prediction.json
@@ -69,18 +72,26 @@ def check_consensus_variance(probs: dict, consensus_top3: list) -> dict:
 def validate(prediction: dict) -> dict:
     probs = prediction.get("probabilities", {})
     consensus_top3 = (prediction.get("consensus_snapshot") or {}).get("top3", [])
+    adjusted_probs = prediction.get("adjusted_probabilities")
 
     sum_result = check_probability_sum(probs)
     effective_probs = sum_result.get("renormalized_probabilities", probs)
     variance_result = check_consensus_variance(effective_probs, consensus_top3)
 
-    overall_passed = sum_result["passed"] and variance_result["passed"]
-    return {
-        "passed": overall_passed,
+    result = {
         "probability_sum_check": sum_result,
         "consensus_variance_check": variance_result,
-        "verdict": "accept" if overall_passed else "regenerate",
     }
+    overall_passed = sum_result["passed"] and variance_result["passed"]
+
+    if adjusted_probs:
+        adjusted_sum_result = check_probability_sum(adjusted_probs)
+        result["adjusted_probability_sum_check"] = adjusted_sum_result
+        overall_passed = overall_passed and adjusted_sum_result["passed"]
+
+    result["passed"] = overall_passed
+    result["verdict"] = "accept" if overall_passed else "regenerate"
+    return result
 
 
 def main() -> int:

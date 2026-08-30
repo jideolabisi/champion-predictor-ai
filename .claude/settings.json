@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "predictor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".venv/Scripts/python.exe scripts/hooks/capture_predictor_trace.py"
+          }
+        ]
+      }
     ]
   }
 }
