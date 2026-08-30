@@ -12,18 +12,18 @@ submissions; this README covers what was actually built.
 ## Architecture
 
 This is a Claude Code project, not a standalone application — Claude Code's
-own runtime *is* the agent harness. There is no `anthropic` SDK dependency
+own runtime _is_ the agent harness. There is no `anthropic` SDK dependency
 and no API key in this repo: all model invocation happens through Claude
 Code itself.
 
-| Generic harness component | This project |
-|---|---|
-| Skills | `.claude/skills/champion-predictor/SKILL.md` — orchestrates integrity check → DiD pre-gen → predict/what-if → DiD during-gen → critique → validate → DiD post-gen → finalize, with one shared regeneration counter (cap 2) |
-| Subagents | `.claude/agents/predictor.md` (primary, ReAct + tools; also evaluates user-named what-if scenarios), `.claude/agents/critic.md` (explanation-quality review, no tools), `.claude/agents/did.md` (defense-in-depth guardrail, no tools, invoked pre/during/post-generation) |
-| Memory | Predictor's short-term session context during a single prediction run; deliberately no long-term memory across runs (each prediction should be independent, per the checkpoint 2.1 design) |
-| MCP / Tools | `mcp_server/safe_server.py`, registered in `.mcp.json` |
-| Resources | `data/raw/*.csv`, `data/raw/unstructured/*.txt` |
-| Hooks | `scripts/hooks/enforce_iteration_cap.py` (`PreToolUse`), `scripts/hooks/capture_predictor_trace.py` (`SubagentStop`) |
+| Generic harness component | This project                                                                                                                                                                                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skills                    | `.claude/skills/champion-predictor/SKILL.md` — orchestrates integrity check → DiD pre-gen → predict/what-if → DiD during-gen → critique → validate → DiD post-gen → finalize, with one shared regeneration counter (cap 2)                                                 |
+| Subagents                 | `.claude/agents/predictor.md` (primary, ReAct + tools; also evaluates user-named what-if scenarios), `.claude/agents/critic.md` (explanation-quality review, no tools), `.claude/agents/did.md` (defense-in-depth guardrail, no tools, invoked pre/during/post-generation) |
+| Memory                    | Predictor's short-term session context during a single prediction run; deliberately no long-term memory across runs (each prediction should be independent, per the checkpoint 2.1 design)                                                                                 |
+| MCP / Tools               | `mcp_server/safe_server.py`, registered in `.mcp.json`                                                                                                                                                                                                                     |
+| Resources                 | `data/raw/*.csv`, `data/raw/unstructured/*.txt`                                                                                                                                                                                                                            |
+| Hooks                     | `scripts/hooks/enforce_iteration_cap.py` (`PreToolUse`), `scripts/hooks/capture_predictor_trace.py` (`SubagentStop`)                                                                                                                                                       |
 
 No GUI/web server/database — this is a CLI-driven deliverable, invoked via
 Claude Code. (A simple GUI may be added later; out of scope for now.)
@@ -31,6 +31,7 @@ Claude Code. (A simple GUI may be added later; out of scope for now.)
 ## Retrieval design
 
 Hybrid, not pure vector RAG:
+
 - **Structured data** (team stats, roster, transactions, and — once sourced —
   coaching/management/injury data) is served via exact-filter MCP tools over
   local CSVs. No chunking, no embeddings — a semantic-search layer over
@@ -47,7 +48,7 @@ Hybrid, not pure vector RAG:
   truth.
 
 Note on checkpoint 3.1 vs. this design: 3.1's original plan was chunked
-vector-RAG over *all six* structured sources (team stats, roster,
+vector-RAG over _all six_ structured sources (team stats, roster,
 transactions, coaching, management, injuries). This repo deliberately
 diverges from that — those six are served via exact-filter MCP tools
 instead, with FAISS reserved for the one genuinely unstructured source
@@ -86,7 +87,7 @@ not a regex/keyword script — per the finalized 6.1 design:
   get the system to skip its own checks, etc.). A low score or flagged
   language pauses for human-in-the-loop (HITL) clarification before the
   Predictor ever runs.
-- **During-generation**: reviews the Predictor's output plus its *actual*
+- **During-generation**: reviews the Predictor's output plus its _actual_
   captured tool-call/reasoning trace (see the new hook below — not a
   self-report, since a compromised or hallucinating Predictor could vouch
   for itself in a self-report) for unsupported certainty and suspicious
@@ -97,7 +98,7 @@ not a regex/keyword script — per the finalized 6.1 design:
   catch unsupported claims.
 
 All three verdicts, plus the Critic's rating, the Predictor's self-reported
-`confidence` (a *separate* number from its outcome probability — how
+`confidence` (a _separate_ number from its outcome probability — how
 reliable it believes its own estimate is, following Kadavath et al. (2022),
 not how likely a team is to win), and the deterministic validator's
 verdict, feed **one shared regeneration counter, capped at 2** — not four
@@ -110,7 +111,7 @@ trigger(s) fired, so a later escalation-rate calculation is just scanning
 structurally unable to modify input files — that's documentation, not new
 enforcement. `scripts/verify_data_integrity.py` adds what wasn't already
 true: a SHA-256 manifest (`data/.checksums.json`) checked before every run,
-which catches *at-rest* modification of a data file between fetch and use.
+which catches _at-rest_ modification of a data file between fetch and use.
 It does **not** detect poisoning that happened upstream, before a fetch
 script wrote the file in the first place — that would need source-level
 trust verification, which is out of scope here. A mismatch pauses for HITL
@@ -145,6 +146,7 @@ a real baseline `probabilities` set and a hypothetical
 ## Data sources
 
 Collected (see `data/raw/` and `data/validation/`):
+
 - Team seasonal stats, 2006–2025 (`nfl_data_py` / nflverse)
 - Current (2026) roster
 - Current-season transactions (already structured, including a free-text
@@ -154,12 +156,13 @@ Collected (see `data/raw/` and `data/validation/`):
 Not yet collected as structured data — `safe_server.py` degrades gracefully
 with an explicit "not available yet" message rather than erroring if these
 files don't exist:
+
 - **Player injury reports**: `scripts/fetch/fetch_injuries.py` is written
   (uses `nfl_data_py.import_injuries`, requires `pyarrow`) but the 2026
   season's weekly injury reports don't exist yet as of this writing — nflverse
   only publishes them once real games are played. Re-run once the season
   starts.
-- **Coaching changes, team management changes**: deliberately *not* built as
+- **Coaching changes, team management changes**: deliberately _not_ built as
   a hand-authored structured file. There is no clean structured API for
   this (checked: `nfl_data_py` has nothing; the ESPN transactions feed
   behind `get_transactions` is player-moves only). A first pass at compiling
@@ -194,7 +197,7 @@ files don't exist:
 - **Iteration-cap hook** (`.claude/settings.json` →
   `scripts/hooks/enforce_iteration_cap.py`): the hook script's own logic is
   verified (pipe-tested: allows below the cap, denies with the correct
-  `hookSpecificOutput` schema exactly at the cap). What's *not* yet verified
+  `hookSpecificOutput` schema exactly at the cap). What's _not_ yet verified
   is whether Claude Code actually routes tool calls made inside a
   subagent's internal loop through a project-level `PreToolUse` hook, vs.
   only top-level session calls — that can only be confirmed by watching a
@@ -215,6 +218,7 @@ python -m venv .venv
 
 If any `.txt` files are added under `data/raw/unstructured/<source>/`,
 (re)build the FAISS index:
+
 ```
 .venv/Scripts/python.exe scripts/build_faiss_index.py
 ```
@@ -222,22 +226,45 @@ If any `.txt` files are added under `data/raw/unstructured/<source>/`,
 Whenever any file under `data/raw/` or `data/validation/` legitimately
 changes (a re-fetch, a new source added), regenerate the checksum baseline
 so the next run's integrity check doesn't flag it as a mismatch:
+
 ```
 .venv/Scripts/python.exe scripts/verify_data_integrity.py --generate
 ```
 
 ## Running
 
+### Gradio Interactive Web UI
+
+Launch the interactive Gradio dashboard:
+
+```
+.venv/Scripts/python.exe app.py
+```
+
+Open your browser at `http://127.0.0.1:7860`. The UI provides:
+
+- **🔮 Live Predictions & Rankings**: Probability bar charts with official franchise colors, division sunburst breakdown, leaderboard table, and multi-agent DiD audit summaries.
+- **⚡ What-If Decision Support**: Interactive scenario simulator (trades, free-agent acquisitions, coaching changes, injuries) with side-by-side odds comparison charts.
+- **📊 Conference Data Explorer**: Historical team stat trends (2006–2025), active 2026 rosters, and transactions.
+- **🔍 FAISS Vector RAG Search**: Semantic search over unstructured franchise valuation narratives.
+- **🛡️ Audit Traces & Integrity**: Real-time SHA-256 data integrity checks, manifest regeneration, and saved prediction reports viewer.
+
+### CLI & Agent Execution
+
 From Claude Code, in this repo:
+
 ```
 /champion-predictor
 ```
+
 (or just ask Claude Code to "run the champion-predictor skill for the
 current season"). Output is written to `outputs/predictions/`.
 
 Backtest a past season:
+
 ```
 .venv/Scripts/python.exe scripts/backtest.py --season 2015
 .venv/Scripts/python.exe scripts/backtest.py --seasons 2010-2020
 ```
+
 Output is written to `outputs/backtest_results_<range>.md`.

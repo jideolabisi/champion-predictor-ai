@@ -1,12 +1,14 @@
-# Core runtime deps for the MCP server + FAISS retrieval.
+# Core runtime deps for the MCP server + FAISS retrieval + Gradio UI.
 # Install with: pip install -r requirements.txt
 numpy>=2,<2.6
-pandas
+pandas<3
 # Pinned to the 1.x line: mcp 2.0 dropped the mcp.server.fastmcp.FastMCP API
 # this server (and the course's own Module-2 MCP demo) is built on.
 mcp[cli]==1.29.0
 faiss-cpu
 sentence-transformers
+gradio>=5.0.0
+plotly>=6.0.0
 
 # nfl_data_py is only used by scripts/fetch/*.py to (re)download source data,
 # not by the MCP server at runtime. Its own pin (numpy<2) conflicts with the
