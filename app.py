@@ -13,6 +13,7 @@ from __future__ import annotations
 import functools
 import json
 import traceback
+from typing import Any
 import pandas as pd
 import gradio as gr
 
@@ -28,14 +29,11 @@ from ui.data_service import (
     search_unstructured_financial,
 )
 from ui.charts import (
-    create_division_breakdown_chart,
     create_probability_chart,
     create_stats_trend_chart,
     create_whatif_comparison_chart,
 )
 from ui.prediction_service import (
-    compute_baseline_probabilities,
-    evaluate_whatif_scenario,
     execute_prediction_pipeline,
     list_saved_predictions,
     load_prediction_file,
@@ -112,128 +110,112 @@ def _handle_errors(fn):
     return wrapper
 
 
-@_handle_errors
-def run_prediction_ui(season_val: int):
-    """Execute prediction pipeline and return updated UI components."""
-    result = execute_prediction_pipeline(season=int(season_val), mode="predict")
-    probs = result["prediction"]["probabilities"]
+def _build_leaderboard_table(probs: dict[str, float]) -> pd.DataFrame:
+    """Rank/Code/Team/Division/Win% table, shared by the Predict-mode results
+    of both the local simulator and the real agentic run."""
     sorted_probs = sorted(probs.items(), key=lambda kv: kv[1], reverse=True)
-
-    # Leaderboard table
-    table_rows = []
+    rows = []
     for idx, (t, p) in enumerate(sorted_probs, 1):
         meta = TEAM_METADATA.get(t, {})
-        table_rows.append([
-            idx,
-            t,
-            meta.get("name", t),
-            meta.get("division", ""),
-            f"{p:.1f}%",
-        ])
-    df_leaderboard = pd.DataFrame(
-        table_rows,
-        columns=["Rank", "Code", "Team Name", "Division", "Win Probability"],
-    )
-
-    # Charts
-    prob_chart = create_probability_chart(probs, f"{season_val} NFC Championship Odds")
-    div_chart = create_division_breakdown_chart(probs)
-
-    # Summary metrics
-    top1 = f"{sorted_probs[0][0]} ({sorted_probs[0][1]:.1f}%)"
-    top2 = f"{sorted_probs[1][0]} ({sorted_probs[1][1]:.1f}%)"
-    top3 = f"{sorted_probs[2][0]} ({sorted_probs[2][1]:.1f}%)"
-
-    conf = f"{result['prediction']['confidence']}%"
-    critic_rating = f"{result['critic']['rating']}"
-    val_status = f"{result['validation']['verdict'].upper()}"
-
-    explanation_md = f"### 📝 Agent Reasoning & Narrative\n{result['prediction']['explanation']}"
-    audit_md = (
-        f"### 🛡️ Guardrails & Verification (Checkpoint 6.1)\n"
-        f"- **Deterministic Validation**: `{result['validation']['verdict'].upper()}` (Sum: `{result['validation']['probability_sum_check']['total']:.1f}%`)\n"
-        f"- **Consensus Variance**: `{result['validation']['consensus_variance_check']['overlap']}/3` overlap with Top-3 consensus\n"
-        f"- **DiD Pre-gen Prompt**: `{result['did']['pre_generation']['prompt_score']}/100` (`{result['did']['pre_generation']['verdict']}`)\n"
-        f"- **DiD During-gen Overconfidence**: `{result['did']['during_generation']['overconfidence_verdict']}` (Suspicion: `{result['did']['during_generation']['suspicion_score']}/100`)\n"
-        f"- **DiD Post-gen Groundedness**: `{result['did']['post_generation']['groundedness_verdict']}`\n"
-        f"- **Report Saved**: `{result['filename']}`"
-    )
-
-    return (
-        prob_chart,
-        div_chart,
-        df_leaderboard,
-        top1,
-        top2,
-        top3,
-        conf,
-        critic_rating,
-        val_status,
-        explanation_md,
-        audit_md,
-    )
+        rows.append([idx, t, meta.get("name", t), meta.get("division", ""), f"{p:.1f}%"])
+    return pd.DataFrame(rows, columns=["Rank", "Code", "Team Name", "Division", "Win Probability"])
 
 
-@_handle_errors
-def run_whatif_ui(target_team: str, scenario_text: str, season_val: int):
-    """Execute what-if scenario simulation and return comparison visualizations."""
-    if not scenario_text.strip():
-        scenario_text = "Trade for an All-Pro Defensive Pass Rusher"
-
-    result = execute_prediction_pipeline(
-        season=int(season_val),
-        mode="what_if",
-        target_team=target_team,
-        scenario_description=scenario_text,
-    )
-
-    base_probs = result["prediction"]["probabilities"]
-    adj_probs = result["prediction"]["adjusted_probabilities"]
-
-    chart = create_whatif_comparison_chart(base_probs, adj_probs, target_team=target_team)
-
-    # Comparison table
-    sorted_teams = sorted(base_probs.keys(), key=lambda t: base_probs[t], reverse=True)
-    table_rows = []
+def _build_whatif_table(probs: dict[str, float], adj_probs: dict[str, float], target_team: str) -> pd.DataFrame:
+    """Rank/Code/Team/Baseline/Scenario/Net Shift table, shared by the
+    What-If-mode results of both the local simulator and the real agentic run."""
+    sorted_teams = sorted(probs.keys(), key=lambda t: probs[t], reverse=True)
+    rows = []
     for idx, t in enumerate(sorted_teams, 1):
         meta = TEAM_METADATA.get(t, {})
-        base_p = base_probs.get(t, 0.0)
+        base_p = probs.get(t, 0.0)
         adj_p = adj_probs.get(t, 0.0)
         delta = adj_p - base_p
         delta_str = f"+{delta:.1f}%" if delta > 0 else (f"{delta:.1f}%" if delta < 0 else "0.0%")
         marker = "🎯 TARGET" if t == target_team else ""
-        table_rows.append([
-            idx,
-            t,
-            meta.get("name", t),
-            f"{base_p:.1f}%",
-            f"{adj_p:.1f}%",
-            delta_str,
-            marker,
-        ])
+        rows.append([idx, t, meta.get("name", t), f"{base_p:.1f}%", f"{adj_p:.1f}%", delta_str, marker])
+    return pd.DataFrame(rows, columns=["Rank", "Code", "Team Name", "Baseline", "Scenario Odds", "Net Shift", "Status"])
 
-    df_comp = pd.DataFrame(
-        table_rows,
-        columns=["Rank", "Code", "Team Name", "Baseline", "Scenario Odds", "Net Shift", "Status"],
-    )
 
-    target_base = base_probs.get(target_team, 0.0)
-    target_adj = adj_probs.get(target_team, 0.0)
-    target_delta = target_adj - target_base
-    delta_display = f"{'+' if target_delta > 0 else ''}{target_delta:.1f}%"
-
-    delta_md = f"### 🔄 Scenario Delta Analysis\n{result['prediction']['delta_explanation']}"
-    report_file_info = f"💾 Report written to: `outputs/predictions/{result['filename']}`"
-
+def _build_audit_markdown(
+    validation: dict[str, Any],
+    did: dict[str, Any],
+    critic: dict[str, Any],
+    filename: str,
+) -> str:
+    """Guardrails & Audit Verification panel, shared by both tabs."""
     return (
-        chart,
-        df_comp,
-        f"{target_base:.1f}%",
-        f"{target_adj:.1f}%",
-        delta_display,
-        delta_md,
-        report_file_info,
+        f"### 🛡️ Guardrails & Verification (Checkpoint 6.1)\n"
+        f"- **Deterministic Validation**: `{validation.get('verdict', '?').upper()}` "
+        f"(Sum: `{validation.get('probability_sum_check', {}).get('total', 0):.1f}%`)\n"
+        f"- **Consensus Variance**: `{validation.get('consensus_variance_check', {}).get('overlap', '?')}/3` "
+        f"overlap with Top-3 consensus\n"
+        f"- **DiD Pre-gen Prompt**: `{did.get('pre_generation', {}).get('prompt_score', '?')}/100` "
+        f"(`{did.get('pre_generation', {}).get('verdict', '?')}`)\n"
+        f"- **DiD During-gen Overconfidence**: `{did.get('during_generation', {}).get('overconfidence_verdict', '?')}` "
+        f"(Suspicion: `{did.get('during_generation', {}).get('suspicion_score', '?')}/100`)\n"
+        f"- **DiD Post-gen Groundedness**: `{did.get('post_generation', {}).get('groundedness_verdict', '?')}`\n"
+        f"- **Critic Rating**: `{critic.get('rating', '?')}`\n"
+        f"- **Report Saved**: `{filename}`"
     )
+
+
+@_handle_errors
+def run_simulator_ui(mode_choice: str, season_val: int, target_team: str, scenario_text: str):
+    """Execute the local, non-agentic heuristic pipeline (same predict/what-if
+    modes as the Real Agentic Predictor tab, same report format) but computed
+    instantly in-process — no Claude Code CLI call, no usage cost. Useful for
+    exercising the guardrail/report pipeline without spending a real run.
+    """
+    mode = "what_if" if mode_choice == "What-If" else "predict"
+    if mode == "what_if" and not scenario_text.strip():
+        scenario_text = "Trade for an All-Pro Defensive Pass Rusher"
+
+    result = execute_prediction_pipeline(
+        season=int(season_val),
+        mode=mode,
+        target_team=target_team if mode == "what_if" else None,
+        scenario_description=scenario_text if mode == "what_if" else None,
+    )
+
+    # Render the ReAct-style trace into the log panel to mirror the shape of
+    # the real agentic run's live log, even though this executes synchronously.
+    log_lines = [f"Running local {mode} simulation for season {season_val}...\n"]
+    for step in result["trace"]:
+        log_lines.append(
+            f"[Round {step['round']}] Thought: {step['thought']}\n"
+            f"  Action: {step['action']}\n"
+            f"  Observation: {step['observation']}\n"
+        )
+    did = result["did"]
+    log_lines.append(
+        f"Guardrails — DiD pre-gen: {did['pre_generation']['verdict']} | "
+        f"during-gen: {did['during_generation']['overconfidence_verdict']} | "
+        f"post-gen: {did['post_generation']['groundedness_verdict']}"
+    )
+    log_lines.append(
+        f"Validation: {result['validation']['verdict'].upper()} | Critic: {result['critic']['rating']}"
+    )
+    log_lines.append(f"\nDone. Report saved: {result['filename']}")
+    log_text = "\n".join(log_lines)
+
+    probs = result["prediction"]["probabilities"]
+    confidence = result["prediction"]["confidence"]
+
+    if mode == "what_if":
+        adj_probs = result["prediction"]["adjusted_probabilities"]
+        chart = create_whatif_comparison_chart(probs, adj_probs, target_team=target_team)
+        report_md = f"### 🔄 Scenario Delta Analysis\n{result['prediction']['delta_explanation']}"
+        prob_table = _build_whatif_table(probs, adj_probs, target_team)
+    else:
+        chart = create_probability_chart(probs, f"{season_val} NFC Championship Odds (Simulated)")
+        report_md = f"### 📝 Simulated Reasoning & Narrative\n{result['prediction']['explanation']}"
+        prob_table = _build_leaderboard_table(probs)
+
+    prob_md = f"### 🏆 Win Probability Leaderboard\n**Predictor Confidence**: `{confidence}%`"
+    audit_md = _build_audit_markdown(result["validation"], result["did"], result["critic"], result["filename"])
+
+    return log_text, report_md, prob_md, prob_table, chart, audit_md
 
 
 def run_real_predictor_ui(
@@ -257,12 +239,15 @@ def run_real_predictor_ui(
             "Claude account, up to the budget cap below).",
             "*Awaiting confirmation.*",
             gr.update(),
+            gr.update(),
+            gr.update(),
+            gr.update(),
         )
         return
 
     mode = "what_if" if mode_choice == "What-If" else "predict"
     log_lines = ["Starting real predictor run — this can take several minutes...\n"]
-    yield "\n".join(log_lines), "*Running...*", gr.update()
+    yield "\n".join(log_lines), "*Running...*", gr.update(), gr.update(), gr.update(), gr.update()
 
     try:
         for event in run_real_predictor_stream(
@@ -274,7 +259,7 @@ def run_real_predictor_ui(
         ):
             if event["type"] == "log":
                 log_lines.append(event["text"])
-                yield "\n".join(log_lines), gr.update(), gr.update()
+                yield "\n".join(log_lines), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
                 continue
 
             # event["type"] == "done"
@@ -287,23 +272,48 @@ def run_real_predictor_ui(
                 md = data.get("markdown_content") or "*Report written but could not be read back.*"
                 probs = data.get("probabilities") or data.get("prediction", {}).get("probabilities", {})
                 adj_probs = data.get("adjusted_probabilities") or data.get("prediction", {}).get("adjusted_probabilities")
+                confidence = data.get("confidence") or data.get("prediction", {}).get("confidence")
+
                 if adj_probs:
                     chart = create_whatif_comparison_chart(probs, adj_probs, target_team=target_team)
                 elif probs:
                     chart = create_probability_chart(probs, f"Real Agentic Prediction — {season_val}")
                 else:
                     chart = gr.update()
+
+                # The real skill (per its SKILL.md) only guarantees a
+                # markdown report — no structured JSON with probabilities
+                # or guardrail verdicts. When present (e.g. because a prior
+                # local-simulator run's file was picked up), build the same
+                # tables as the simulator tab; otherwise say so plainly
+                # rather than showing stale or fabricated data.
+                if probs:
+                    prob_table = _build_whatif_table(probs, adj_probs, target_team) if adj_probs else _build_leaderboard_table(probs)
+                    conf_line = f"**Predictor Confidence**: `{confidence}%`" if confidence is not None else "*Confidence score not reported as structured data.*"
+                    prob_md = f"### 🏆 Win Probability Leaderboard\n{conf_line}"
+                else:
+                    prob_table = gr.update()
+                    prob_md = "*Structured probability data isn't available for this report — the full narrative (including the probability table) is in the Result - Analysis tab.*"
+
+                did = data.get("did") or {}
+                validation = data.get("validation") or {}
+                critic = data.get("critic") or {}
+                if did or validation or critic:
+                    audit_md = _build_audit_markdown(validation, did, critic, event["report_stem"])
+                else:
+                    audit_md = "*Structured guardrail verdicts aren't available for this report — the skill reports them in prose in the Result - Analysis tab instead.*"
+
                 log_lines.append(f"\nDone. Report saved: {event['report_stem']}{cost_note}")
-                yield "\n".join(log_lines), md, chart
+                yield "\n".join(log_lines), md, prob_md, prob_table, chart, audit_md
             else:
                 status = "completed without writing a report" if event["ok"] else "failed"
                 explanation = event.get("error") or "No further detail was returned."
                 log_lines.append(f"\nRun {status}{cost_note}.")
-                yield "\n".join(log_lines), f"### Run {status}\n\n{explanation}", gr.update()
+                yield "\n".join(log_lines), f"### Run {status}\n\n{explanation}", gr.update(), gr.update(), gr.update(), gr.update()
     except Exception as exc:
         traceback.print_exc()
         log_lines.append(f"\nError: {exc}")
-        yield "\n".join(log_lines), "", gr.update()
+        yield "\n".join(log_lines), "", gr.update(), gr.update(), gr.update(), gr.update()
         raise gr.Error(f"Real predictor run failed: {exc}") from exc
 
 
@@ -469,104 +479,42 @@ def build_app() -> gr.Blocks:
 
         with gr.Tabs() as main_tabs:
             # ----------------------------------------------------
-            # TAB 1: Live Predictions & Rankings
+            # TAB 1: Non-Agentic Simulator (local heuristic, no LLM)
             # ----------------------------------------------------
-            with gr.TabItem("🔮 Live Predictions & Rankings", id="tab_predictions"):
+            with gr.TabItem("🧪 Non-Agentic Simulator (For Test)", id="tab_simulator"):
+                gr.Markdown(
+                    """
+                    ### 🧪 Fast Local Heuristic Simulator
+                    Runs the same Predict / What-If pipeline and report format as the **Real
+                    Agentic Predictor** tab, but computed instantly in-process from a deterministic
+                    local heuristic over the CSVs — no Claude Code CLI call, no usage cost. Useful
+                    for exercising the guardrail/report pipeline (or demoing the UI) for free.
+                    """
+                )
                 with gr.Row():
                     with gr.Column(scale=1):
-                        season_input = gr.Dropdown(
+                        sim_mode = gr.Radio(
+                            choices=["Predict", "What-If"],
+                            value="Predict",
+                            label="Mode",
+                        )
+                        sim_season = gr.Dropdown(
                             choices=SEASON_CHOICES,
                             value=_CURRENT_SEASON,
-                            label="Target NFC Season",
+                            label="Season",
                             info=(
                                 "Historical stats are restricted to seasons before the one "
                                 "selected. Roster/transaction/financial inputs always reflect "
-                                f"the current {_CURRENT_SEASON} snapshot — no historical roster "
-                                "data exists for earlier seasons."
+                                f"the current {_CURRENT_SEASON} snapshot."
                             ),
                         )
-                        predict_btn = gr.Button("⚡ Generate Championship Predictions", variant="primary", size="lg")
-
-                        gr.Markdown("### 🏆 Top Contenders")
-                        with gr.Row():
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>#1 Favorite</div>")
-                                m_top1 = gr.Markdown("**—**", elem_classes=["metric-val"])
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>#2 Contender</div>")
-                                m_top2 = gr.Markdown("**—**", elem_classes=["metric-val"])
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>#3 Contender</div>")
-                                m_top3 = gr.Markdown("**—**", elem_classes=["metric-val"])
-
-                        gr.Markdown("### 🛡️ Guardrail Status")
-                        with gr.Row():
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>Confidence</div>")
-                                m_conf = gr.Markdown("**—**", elem_classes=["metric-val"])
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>Critic Rating</div>")
-                                m_critic = gr.Markdown("**—**", elem_classes=["metric-val"])
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>Validator</div>")
-                                m_val = gr.Markdown("**—**", elem_classes=["metric-val"])
-
-                    with gr.Column(scale=2):
-                        pred_chart = gr.Plot(label="Championship Win Probability Distribution")
-
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        div_sunburst = gr.Plot(label="Probability Share by NFC Division")
-                    with gr.Column(scale=1):
-                        leaderboard_table = gr.Dataframe(
-                            headers=["Rank", "Code", "Team Name", "Division", "Win Probability"],
-                            label="Conference Leaderboard",
-                            interactive=False,
-                        )
-
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        narrative_box = gr.Markdown("### 📝 Agent Reasoning & Narrative\n*Click 'Generate Championship Predictions' to run.*")
-                    with gr.Column(scale=1):
-                        audit_box = gr.Markdown("### 🛡️ Guardrails & Verification\n*Awaiting execution.*")
-
-                predict_btn.click(
-                    fn=run_prediction_ui,
-                    inputs=[season_input],
-                    outputs=[
-                        pred_chart,
-                        div_sunburst,
-                        leaderboard_table,
-                        m_top1,
-                        m_top2,
-                        m_top3,
-                        m_conf,
-                        m_critic,
-                        m_val,
-                        narrative_box,
-                        audit_box,
-                    ],
-                )
-
-            # ----------------------------------------------------
-            # TAB 2: What-If Decision Support
-            # ----------------------------------------------------
-            with gr.TabItem("⚡ What-If Decision Support", id="tab_whatif"):
-                gr.Markdown(
-                    """
-                    ### 🎯 Scenario Impact Simulator
-                    Evaluate how a user-named hypothetical change (player trade, free agency signing, key injury, coaching hire)
-                    shifts a team's NFC Championship probability and impacts the rest of the conference.
-                    """
-                )
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        whatif_team = gr.Dropdown(
+                        sim_team = gr.Dropdown(
                             choices=[(f"{c} — {TEAM_METADATA[c]['name']}", c) for c in NFC_TEAMS],
                             value="PHI",
                             label="Target NFC Franchise",
+                            visible=False,
                         )
-                        whatif_preset = gr.Dropdown(
+                        sim_preset = gr.Dropdown(
                             choices=[
                                 "Trade for an All-Pro Defensive Pass Rusher",
                                 "Starting Quarterback Suffers Season-Ending Knee Injury",
@@ -576,70 +524,66 @@ def build_app() -> gr.Blocks:
                             ],
                             value="Trade for an All-Pro Defensive Pass Rusher",
                             label="Quick Presets",
+                            visible=False,
                         )
-                        whatif_scenario_input = gr.Textbox(
+                        sim_scenario = gr.Textbox(
                             lines=3,
                             value="Trade for an All-Pro Defensive Pass Rusher to anchor the defensive front.",
                             label="Hypothetical Scenario Description",
                             placeholder="Describe the trade, signing, coaching change, or injury in detail...",
+                            visible=False,
                         )
-                        whatif_preset.change(
+                        sim_preset.change(
                             fn=lambda p: p,
-                            inputs=[whatif_preset],
-                            outputs=[whatif_scenario_input],
+                            inputs=[sim_preset],
+                            outputs=[sim_scenario],
                         )
-                        whatif_season = gr.Dropdown(
-                            choices=SEASON_CHOICES,
-                            value=_CURRENT_SEASON,
-                            label="Season Context",
-                            info=(
-                                "Roster/transaction/financial inputs always reflect the current "
-                                f"{_CURRENT_SEASON} snapshot regardless of this selection."
-                            ),
-                        )
-                        whatif_btn = gr.Button("⚡ Simulate What-If Impact", variant="primary", size="lg")
 
-                        with gr.Row():
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>Baseline Odds</div>")
-                                w_base = gr.Markdown("**—**", elem_classes=["metric-val"])
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>Scenario Odds</div>")
-                                w_adj = gr.Markdown("**—**", elem_classes=["metric-val"])
-                            with gr.Column(elem_classes=["metric-card"]):
-                                gr.HTML("<div class='metric-label'>Net Shift</div>")
-                                w_delta = gr.Markdown("**—**", elem_classes=["metric-val"])
+                        def _toggle_sim_mode(choice):
+                            is_whatif = choice == "What-If"
+                            return (
+                                gr.update(visible=is_whatif),
+                                gr.update(visible=is_whatif),
+                                gr.update(visible=is_whatif),
+                            )
+
+                        sim_mode.change(
+                            fn=_toggle_sim_mode,
+                            inputs=[sim_mode],
+                            outputs=[sim_team, sim_preset, sim_scenario],
+                        )
+
+                        sim_run_btn = gr.Button("⚡ Run Local Simulation", variant="primary", size="lg")
 
                     with gr.Column(scale=2):
-                        whatif_chart = gr.Plot(label="Baseline vs. Adjusted Scenario Comparison")
+                        with gr.Tabs():
+                            with gr.TabItem("Reasoning Trace"):
+                                sim_log = gr.Textbox(
+                                    label="Simulated Reasoning Trace",
+                                    lines=20,
+                                    max_lines=20,
+                                    interactive=False,
+                                    autoscroll=True,
+                                    show_label=False,
+                                )
+                            with gr.TabItem("Result - Analysis"):
+                                sim_report_md = gr.Markdown("*Run the simulator to see the report here.*")
+                            with gr.TabItem("Result - Probabilities"):
+                                sim_prob_md = gr.Markdown("*Run the simulator to see the leaderboard here.*")
+                                sim_prob_table = gr.Dataframe(interactive=False)
+                            with gr.TabItem("Result - Probabilities Chart"):
+                                sim_chart = gr.Plot(label="Probability Outcome", show_label=False)
+                            with gr.TabItem("Guardrails & Audit Verification"):
+                                sim_audit_md = gr.Markdown("*Run the simulator to see the guardrail verdicts here.*")
 
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        whatif_delta_box = gr.Markdown("### 🔄 Scenario Delta Analysis\n*Run a scenario to inspect impact.*")
-                        whatif_file_box = gr.Markdown("")
-                    with gr.Column(scale=1):
-                        whatif_table = gr.Dataframe(
-                            headers=["Rank", "Code", "Team Name", "Baseline", "Scenario Odds", "Net Shift", "Status"],
-                            label="All 16 Teams Adjusted Odds Leaderboard",
-                            interactive=False,
-                        )
-
-                whatif_btn.click(
-                    fn=run_whatif_ui,
-                    inputs=[whatif_team, whatif_scenario_input, whatif_season],
-                    outputs=[
-                        whatif_chart,
-                        whatif_table,
-                        w_base,
-                        w_adj,
-                        w_delta,
-                        whatif_delta_box,
-                        whatif_file_box,
-                    ],
+                sim_run_btn.click(
+                    fn=run_simulator_ui,
+                    inputs=[sim_mode, sim_season, sim_team, sim_scenario],
+                    outputs=[sim_log, sim_report_md, sim_prob_md, sim_prob_table, sim_chart, sim_audit_md],
                 )
 
             # ----------------------------------------------------
-            # TAB 2.5: Real Agentic Predictor (Claude Code CLI)
+            # TAB 2: Real Agentic Predictor (Claude Code CLI)
             # ----------------------------------------------------
             with gr.TabItem("🤖 Real Agentic Predictor", id="tab_real_agent"):
                 gr.Markdown(
@@ -708,24 +652,30 @@ def build_app() -> gr.Blocks:
                         agent_run_btn = gr.Button("▶ Run Real Predictor", variant="stop", size="lg")
 
                     with gr.Column(scale=2):
-                        agent_log = gr.Textbox(
-                            label="Live Agent Log",
-                            lines=20,
-                            max_lines=20,
-                            interactive=False,
-                            autoscroll=True,
-                        )
-
-                with gr.Row():
-                    with gr.Column(scale=1):
-                        agent_report_md = gr.Markdown("*Run the predictor to see the report here.*")
-                    with gr.Column(scale=1):
-                        agent_chart = gr.Plot(label="Probability Outcome")
+                        with gr.Tabs():
+                            with gr.TabItem("Reasoning Trace"):
+                                agent_log = gr.Textbox(
+                                    label="Live Agent Log",
+                                    lines=20,
+                                    max_lines=20,
+                                    interactive=False,
+                                    autoscroll=True,
+                                    show_label=False,
+                                )
+                            with gr.TabItem("Result - Analysis"):
+                                agent_report_md = gr.Markdown("*Run the predictor to see the report here.*")
+                            with gr.TabItem("Result - Probabilities"):
+                                agent_prob_md = gr.Markdown("*Run the predictor to see the leaderboard here.*")
+                                agent_prob_table = gr.Dataframe(interactive=False)
+                            with gr.TabItem("Result - Probabilities Chart"):
+                                agent_chart = gr.Plot(label="Probability Outcome", show_label=False)
+                            with gr.TabItem("Guardrails & Audit Verification"):
+                                agent_audit_md = gr.Markdown("*Run the predictor to see the guardrail verdicts here.*")
 
                 agent_run_btn.click(
                     fn=run_real_predictor_ui,
                     inputs=[agent_mode, agent_season, agent_team, agent_scenario, agent_budget, agent_confirm],
-                    outputs=[agent_log, agent_report_md, agent_chart],
+                    outputs=[agent_log, agent_report_md, agent_prob_md, agent_prob_table, agent_chart, agent_audit_md],
                 )
 
             # ----------------------------------------------------
@@ -903,18 +853,40 @@ def build_app() -> gr.Blocks:
     return demo
 
 
+# Forces the page into Gradio's light theme regardless of the OS/browser
+# color-scheme preference, by redirecting to add ?__theme=light on first
+# load. Without this, a system in dark mode pulls in the Soft theme's
+# default dark tokens (which were never overridden below) instead of this
+# app's palette, breaking contrast for anything not covered by CUSTOM_CSS.
+FORCE_LIGHT_THEME_HEAD = """
+<script>
+(function () {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get("__theme") !== "light") {
+        params.set("__theme", "light");
+        window.location.replace(
+            window.location.pathname + "?" + params.toString() + window.location.hash
+        );
+    }
+})();
+</script>
+"""
+
 if __name__ == "__main__":
     demo = build_app()
+    # No color overrides here: the Soft theme's own light-mode tokens
+    # (white/off-white blocks, dark slate text) are used as-is. The
+    # previous version pinned body/block/input colors to a dark-navy
+    # palette for BOTH the light and dark token slots — so forcing
+    # ?__theme=light still rendered dark, since "light mode" itself was
+    # defined as dark navy. The header banner, metric cards, and audit
+    # badges in CUSTOM_CSS stay intentionally dark-accented; they carry
+    # their own explicit (light) text colors, so they stay readable
+    # against the now-light page background.
     theme = gr.themes.Soft(
         primary_hue="teal",
         secondary_hue="blue",
         neutral_hue="slate",
-    ).set(
-        body_background_fill="#0b1120",
-        body_text_color="#f1f5f9",
-        block_background_fill="#1e293b",
-        block_border_color="#334155",
-        input_background_fill="#0f172a",
     )
     demo.queue()
     demo.launch(
@@ -922,5 +894,6 @@ if __name__ == "__main__":
         server_port=7860,
         theme=theme,
         css=CUSTOM_CSS,
+        head=FORCE_LIGHT_THEME_HEAD,
         share=False,
     )
