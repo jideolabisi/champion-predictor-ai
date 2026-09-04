@@ -10,12 +10,15 @@ Provides an interactive dashboard for:
 
 from __future__ import annotations
 
+import datetime
 import functools
 import json
+import re
 import traceback
 from typing import Any
 import pandas as pd
 import gradio as gr
+from gradio.themes.utils import sizes
 
 from ui.constants import NFC_TEAMS, TEAM_CHOICES, TEAM_METADATA, DIVISIONS
 from ui.data_service import (
@@ -23,6 +26,7 @@ from ui.data_service import (
     generate_checksum_manifest,
     get_available_seasons,
     get_historical_champions,
+    get_latest_session_trace,
     get_team_roster,
     get_team_stats,
     get_transactions,
@@ -70,15 +74,20 @@ CUSTOM_CSS = """
     text-align: center;
 }
 .metric-val {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 700;
     color: #38bdf8;
 }
 .metric-label {
-    font-size: 13px;
+    font-size: 14px;
     color: #94a3b8;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+.status-line {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 4px 0 8px 0;
 }
 .audit-badge-pass {
     display: inline-block;
@@ -91,6 +100,17 @@ CUSTOM_CSS = """
 }
 .tab-content {
     padding-top: 10px;
+}
+.confirm-box {
+    background: #fef3c7 !important;
+    border: 2px solid #d97706 !important;
+    border-radius: 10px;
+    padding: 12px 14px !important;
+    margin-bottom: 10px;
+}
+.confirm-box label {
+    color: #78350f !important;
+    font-weight: 600;
 }
 """
 
@@ -143,13 +163,22 @@ def _build_audit_markdown(
     critic: dict[str, Any],
     filename: str,
 ) -> str:
-    """Guardrails & Audit Verification panel, shared by both tabs."""
+    """Guardrails & Verification panel, shared by both tabs."""
+    integrity = check_integrity()
+    if integrity.get("passed"):
+        checksum_line = "- **Data Checksum (SHA-256 manifest)**: `PASSED` — all watched files match the baseline\n"
+    else:
+        changed = integrity.get("changed", [])
+        checksum_line = (
+            f"- **Data Checksum (SHA-256 manifest)**: `MISMATCH` — {len(changed)} file(s) changed since baseline\n"
+        )
     return (
-        f"### 🛡️ Guardrails & Verification (Checkpoint 6.1)\n"
+        f"### 🛡️ Guardrails & Verification\n"
         f"- **Deterministic Validation**: `{validation.get('verdict', '?').upper()}` "
         f"(Sum: `{validation.get('probability_sum_check', {}).get('total', 0):.1f}%`)\n"
         f"- **Consensus Variance**: `{validation.get('consensus_variance_check', {}).get('overlap', '?')}/3` "
         f"overlap with Top-3 consensus\n"
+        f"{checksum_line}"
         f"- **DiD Pre-gen Prompt**: `{did.get('pre_generation', {}).get('prompt_score', '?')}/100` "
         f"(`{did.get('pre_generation', {}).get('verdict', '?')}`)\n"
         f"- **DiD During-gen Overconfidence**: `{did.get('during_generation', {}).get('overconfidence_verdict', '?')}` "
@@ -158,6 +187,53 @@ def _build_audit_markdown(
         f"- **Critic Rating**: `{critic.get('rating', '?')}`\n"
         f"- **Report Saved**: `{filename}`"
     )
+
+
+_TEAM_CODE_RE = re.compile(r"\*\*([A-Z]{2,4})\*\*")
+_PERCENT_RE = re.compile(r"([+-]?\d{1,3}(?:\.\d+)?)\s*%")
+_CONFIDENCE_RE = re.compile(r"Confidence[^\d]{0,20}(\d{1,3})\s*%", re.IGNORECASE)
+
+
+def _parse_probabilities_from_markdown(md: str) -> tuple[dict[str, float], dict[str, float] | None]:
+    """Best-effort fallback: recover a probabilities table (and, if present,
+    an adjusted-probabilities table) from a freeform markdown report when no
+    structured JSON companion file exists alongside it — e.g. real agentic
+    runs made before the champion-predictor skill was updated to also write
+    one. Relies only on the report's table shape being roughly what
+    SKILL.md's step 9 asks for: a bolded team code per row, followed by one
+    percentage (PREDICT mode) or two — baseline then adjusted — (WHAT_IF
+    mode) in column order. Never raises; returns empty dicts if it can't
+    find anything that looks like a probability table.
+    """
+    probs: dict[str, float] = {}
+    adjusted: dict[str, float] = {}
+    for line in md.splitlines():
+        if "|" not in line:
+            continue
+        team_match = _TEAM_CODE_RE.search(line)
+        if not team_match or team_match.group(1) not in TEAM_METADATA:
+            continue
+        team = team_match.group(1)
+        percents = _PERCENT_RE.findall(line)
+        if not percents:
+            continue
+        try:
+            probs[team] = float(percents[0])
+            if len(percents) >= 2:
+                adjusted[team] = float(percents[1])
+        except ValueError:
+            continue
+    return probs, (adjusted if adjusted else None)
+
+
+def _parse_confidence_from_markdown(md: str) -> int | None:
+    match = _CONFIDENCE_RE.search(md)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:
+        return None
 
 
 @_handle_errors
@@ -234,20 +310,27 @@ def run_real_predictor_ui(
     """
     if not confirmed:
         yield (
-            "Not started. Check the confirmation box above to launch a real "
-            "Claude Code agent run (this consumes real usage against your "
-            "Claude account, up to the budget cap below).",
+            "Not started. In the panel on the left, check the highlighted "
+            "confirmation checkbox (below Max Budget) to launch a real Claude "
+            "Code agent run (this consumes real usage against your Claude "
+            "account, up to the budget cap), then click Run Real Predictor again.",
             "*Awaiting confirmation.*",
             gr.update(),
             gr.update(),
             gr.update(),
+            gr.update(),
+            "⚪ **Not started** — check the confirmation box first.",
             gr.update(),
         )
         return
 
     mode = "what_if" if mode_choice == "What-If" else "predict"
     log_lines = ["Starting real predictor run — this can take several minutes...\n"]
-    yield "\n".join(log_lines), "*Running...*", gr.update(), gr.update(), gr.update(), gr.update()
+    yield (
+        "\n".join(log_lines), "*Running...*", gr.update(), gr.update(), gr.update(), gr.update(),
+        "🟠 **Running...** This can take several minutes — the button is disabled until it finishes.",
+        gr.update(interactive=False),
+    )
 
     try:
         for event in run_real_predictor_stream(
@@ -259,7 +342,10 @@ def run_real_predictor_ui(
         ):
             if event["type"] == "log":
                 log_lines.append(event["text"])
-                yield "\n".join(log_lines), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                yield (
+                    "\n".join(log_lines), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(),
+                )
                 continue
 
             # event["type"] == "done"
@@ -274,6 +360,19 @@ def run_real_predictor_ui(
                 adj_probs = data.get("adjusted_probabilities") or data.get("prediction", {}).get("adjusted_probabilities")
                 confidence = data.get("confidence") or data.get("prediction", {}).get("confidence")
 
+                # The champion-predictor skill now writes a JSON companion
+                # file with structured probabilities/guardrail data (see
+                # SKILL.md step 9). For reports saved before that change
+                # (or if the JSON write is ever skipped), fall back to
+                # best-effort parsing of the markdown table instead of
+                # showing nothing.
+                if not probs and md:
+                    parsed_probs, parsed_adj = _parse_probabilities_from_markdown(md)
+                    if parsed_probs:
+                        probs, adj_probs = parsed_probs, parsed_adj
+                if confidence is None and md:
+                    confidence = _parse_confidence_from_markdown(md)
+
                 if adj_probs:
                     chart = create_whatif_comparison_chart(probs, adj_probs, target_team=target_team)
                 elif probs:
@@ -281,12 +380,6 @@ def run_real_predictor_ui(
                 else:
                     chart = gr.update()
 
-                # The real skill (per its SKILL.md) only guarantees a
-                # markdown report — no structured JSON with probabilities
-                # or guardrail verdicts. When present (e.g. because a prior
-                # local-simulator run's file was picked up), build the same
-                # tables as the simulator tab; otherwise say so plainly
-                # rather than showing stale or fabricated data.
                 if probs:
                     prob_table = _build_whatif_table(probs, adj_probs, target_team) if adj_probs else _build_leaderboard_table(probs)
                     conf_line = f"**Predictor Confidence**: `{confidence}%`" if confidence is not None else "*Confidence score not reported as structured data.*"
@@ -304,16 +397,30 @@ def run_real_predictor_ui(
                     audit_md = "*Structured guardrail verdicts aren't available for this report — the skill reports them in prose in the Result - Analysis tab instead.*"
 
                 log_lines.append(f"\nDone. Report saved: {event['report_stem']}{cost_note}")
-                yield "\n".join(log_lines), md, prob_md, prob_table, chart, audit_md
+                yield (
+                    "\n".join(log_lines), md, prob_md, prob_table, chart, audit_md,
+                    f"✅ **Done.** Report saved: `{event['report_stem']}`{cost_note}",
+                    gr.update(interactive=True),
+                )
             else:
                 status = "completed without writing a report" if event["ok"] else "failed"
                 explanation = event.get("error") or "No further detail was returned."
                 log_lines.append(f"\nRun {status}{cost_note}.")
-                yield "\n".join(log_lines), f"### Run {status}\n\n{explanation}", gr.update(), gr.update(), gr.update(), gr.update()
+                icon = "⚠️" if event["ok"] else "❌"
+                yield (
+                    "\n".join(log_lines), f"### Run {status}\n\n{explanation}",
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    f"{icon} **Run {status}**{cost_note}.",
+                    gr.update(interactive=True),
+                )
     except Exception as exc:
         traceback.print_exc()
         log_lines.append(f"\nError: {exc}")
-        yield "\n".join(log_lines), "", gr.update(), gr.update(), gr.update(), gr.update()
+        yield (
+            "\n".join(log_lines), "", gr.update(), gr.update(), gr.update(), gr.update(),
+            f"❌ **Error**: {exc}",
+            gr.update(interactive=True),
+        )
         raise gr.Error(f"Real predictor run failed: {exc}") from exc
 
 
@@ -436,6 +543,56 @@ def load_reports_archive_ui():
 
 
 @_handle_errors
+def load_latest_trace_ui():
+    """Load the Predictor's most recent short-term session trace, if any.
+
+    Two different producers write this same file with two different shapes:
+    - The local simulator writes a *list* of `{round, thought, action,
+      observation}` dicts.
+    - The real agent's `SubagentStop` hook (capture_predictor_trace.py)
+      writes a single *dict* with separate `tool_calls` and `reasoning_text`
+      lists (plus an optional `note`/`error`) — it has no per-round grouping
+      because it's reading the raw transcript, not a self-report. Treating
+      that dict as if it were the simulator's list of round-dicts (iterating
+      it yields its string keys) is what previously crashed with
+      `'str' object has no attribute 'get'`.
+    """
+    trace = get_latest_session_trace()
+    if not trace:
+        return "*No session trace found yet — run a prediction (simulator or real agent) first.*"
+
+    mtime_str = datetime.datetime.fromtimestamp(trace["mtime"]).strftime("%Y-%m-%d %H:%M:%S")
+    steps = trace["steps"]
+    lines = [f"**Last updated**: `{mtime_str}` — from `outputs/.trace/predictor_latest.json`\n"]
+
+    if isinstance(steps, list):
+        for step in steps:
+            lines.append(
+                f"**Round {step.get('round', '?')}**\n"
+                f"- Thought: {step.get('thought', '')}\n"
+                f"- Action: `{step.get('action', '')}`\n"
+                f"- Observation: {step.get('observation', '')}\n"
+            )
+    elif isinstance(steps, dict):
+        note = steps.get("note") or steps.get("error")
+        if note:
+            lines.append(f"> ⚠️ {note}\n")
+        for text in steps.get("reasoning_text", []):
+            lines.append(f"- Thought: {text}\n")
+        for call in steps.get("tool_calls", []):
+            if "tool" in call:
+                lines.append(f"- Action: `{call.get('tool', '')}({json.dumps(call.get('input', {}))})`\n")
+            elif "observation" in call:
+                lines.append(f"- Observation: {call.get('observation', '')}\n")
+        if not steps.get("reasoning_text") and not steps.get("tool_calls") and not note:
+            lines.append("*Trace file present but empty.*")
+    else:
+        lines.append(f"*Unrecognized trace format: `{type(steps).__name__}`.*")
+
+    return "\n".join(lines)
+
+
+@_handle_errors
 def view_report_detail_ui(selected_stem: str):
     """Load detail of a specific saved prediction report."""
     if not selected_stem:
@@ -461,18 +618,10 @@ def build_app() -> gr.Blocks:
             gr.HTML(
                 """
                 <div class="header-box">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                        <div>
-                            <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #ffffff;">🏈 Champion Predictor AI</h1>
-                            <p style="margin: 6px 0 0 0; font-size: 15px; color: #94a3b8;">
-                                NFC Championship Win Probability Engine &amp; What-If Decision Support System
-                            </p>
-                        </div>
-                        <div style="text-align: right; margin-top: 10px;">
-                            <span class="audit-badge-pass">🛡️ DiD Guardrails Active</span>
-                            <span class="audit-badge-pass" style="background:#1e3a8a; color:#93c5fd; margin-left: 6px;">🧠 ReAct Multi-Agent</span>
-                        </div>
-                    </div>
+                    <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #ffffff;">🏈 Champion Predictor AI</h1>
+                    <p style="margin: 6px 0 0 0; font-size: 15px; color: #94a3b8;">
+                        NFC Championship Win Probability Engine &amp; What-If Decision Support System
+                    </p>
                 </div>
                 """
             )
@@ -571,9 +720,9 @@ def build_app() -> gr.Blocks:
                             with gr.TabItem("Result - Probabilities"):
                                 sim_prob_md = gr.Markdown("*Run the simulator to see the leaderboard here.*")
                                 sim_prob_table = gr.Dataframe(interactive=False)
-                            with gr.TabItem("Result - Probabilities Chart"):
+                            with gr.TabItem("Result - Chart"):
                                 sim_chart = gr.Plot(label="Probability Outcome", show_label=False)
-                            with gr.TabItem("Guardrails & Audit Verification"):
+                            with gr.TabItem("Guardrails & Verification"):
                                 sim_audit_md = gr.Markdown("*Run the simulator to see the guardrail verdicts here.*")
 
                 sim_run_btn.click(
@@ -589,19 +738,11 @@ def build_app() -> gr.Blocks:
                 gr.Markdown(
                     f"""
                     ### 🤖 Run the Real ReAct Predictor Pipeline
-                    Everything above uses a fast local heuristic over the CSVs. **This tab launches
-                    the actual `champion-predictor` skill in Claude Code** — the `predictor` subagent
-                    doing real ReAct tool-calling reasoning over the MCP data tools (and WebSearch),
-                    reviewed by the `critic` subagent, checked by the three-stage `did` guardrail, and
-                    validated deterministically — exactly as if you'd typed `/champion-predictor` yourself.
-
-                    ⚠️ **This is a real, multi-minute agent run that consumes usage on your Claude
-                    account**, not a free local computation. It's hard-capped by the budget below
-                    (`--max-budget-usd`), but a run can still take several minutes and multiple
-                    subagent invocations. A human-in-the-loop pause the skill would normally ask you
-                    about (e.g. a data-integrity mismatch, or a high suspicion score) cannot be
-                    answered headlessly — if that happens, the run stops and shows you why instead of
-                    guessing on your behalf.
+                    **This tab launches the actual `champion-predictor` skill in Claude Code** — the
+                    `predictor` subagent doing real ReAct tool-calling reasoning over the MCP data
+                    tools (and WebSearch), reviewed by the `critic` subagent, checked by the
+                    three-stage `did` guardrail, and validated deterministically — exactly as if
+                    you'd typed `/champion-predictor` yourself.
                     """
                 )
                 with gr.Row():
@@ -645,11 +786,13 @@ def build_app() -> gr.Blocks:
                             maximum=25.0,
                             label="Max Budget (USD) — hard cap via --max-budget-usd",
                         )
-                        agent_confirm = gr.Checkbox(
-                            label="I understand this launches a real Claude Code agent run using my account's usage, up to the budget cap above",
-                            value=False,
-                        )
+                        with gr.Group(elem_classes=["confirm-box"]):
+                            agent_confirm = gr.Checkbox(
+                                label="I understand this launches a real Claude Code agent run using my account's usage, up to the budget cap above",
+                                value=False,
+                            )
                         agent_run_btn = gr.Button("▶ Run Real Predictor", variant="stop", size="lg")
+                        agent_status = gr.Markdown("⚪ **Idle**", elem_classes=["status-line"])
 
                     with gr.Column(scale=2):
                         with gr.Tabs():
@@ -667,21 +810,24 @@ def build_app() -> gr.Blocks:
                             with gr.TabItem("Result - Probabilities"):
                                 agent_prob_md = gr.Markdown("*Run the predictor to see the leaderboard here.*")
                                 agent_prob_table = gr.Dataframe(interactive=False)
-                            with gr.TabItem("Result - Probabilities Chart"):
+                            with gr.TabItem("Result - Chart"):
                                 agent_chart = gr.Plot(label="Probability Outcome", show_label=False)
-                            with gr.TabItem("Guardrails & Audit Verification"):
+                            with gr.TabItem("Guardrails & Verification"):
                                 agent_audit_md = gr.Markdown("*Run the predictor to see the guardrail verdicts here.*")
 
                 agent_run_btn.click(
                     fn=run_real_predictor_ui,
                     inputs=[agent_mode, agent_season, agent_team, agent_scenario, agent_budget, agent_confirm],
-                    outputs=[agent_log, agent_report_md, agent_prob_md, agent_prob_table, agent_chart, agent_audit_md],
+                    outputs=[
+                        agent_log, agent_report_md, agent_prob_md, agent_prob_table, agent_chart, agent_audit_md,
+                        agent_status, agent_run_btn,
+                    ],
                 )
 
             # ----------------------------------------------------
             # TAB 3: Data Explorer
             # ----------------------------------------------------
-            with gr.TabItem("📊 Conference Data Explorer", id="tab_data"):
+            with gr.TabItem("📊 Data Explorer", id="tab_data"):
                 with gr.Tabs():
                     # Sub-tab: Seasonal Stats
                     with gr.TabItem("📈 Historical Team Stats (2006–2025)"):
@@ -771,7 +917,7 @@ def build_app() -> gr.Blocks:
             # ----------------------------------------------------
             # TAB 4: FAISS Vector RAG Search
             # ----------------------------------------------------
-            with gr.TabItem("🔍 FAISS Vector RAG Search", id="tab_faiss"):
+            with gr.TabItem("🔍 RAG Search", id="tab_faiss"):
                 gr.Markdown(
                     """
                     ### 🧠 Semantic Search over Unstructured Financial Narratives
@@ -799,7 +945,7 @@ def build_app() -> gr.Blocks:
             # ----------------------------------------------------
             # TAB 5: Audit Traces & Guardrail Inspector
             # ----------------------------------------------------
-            with gr.TabItem("🛡️ Audit Traces & Integrity", id="tab_audit"):
+            with gr.TabItem("🛡️ Audit", id="tab_audit"):
                 with gr.Row():
                     with gr.Column(scale=1):
                         gr.Markdown("### 🔒 Data Integrity Verification")
@@ -841,6 +987,32 @@ def build_app() -> gr.Blocks:
                     outputs=[report_content_view, report_chart_view],
                 )
 
+            # ----------------------------------------------------
+            # TAB 6: Memory
+            # ----------------------------------------------------
+            with gr.TabItem("🧠 Memory", id="tab_memory"):
+                gr.Markdown(
+                    """
+                    ### 🧠 Memory Design
+                    Champion Predictor AI deliberately has **no long-term, cross-run memory**.
+                    Per the checkpoint 2.1 design, every prediction run reasons independently
+                    from current data — never from what an earlier run concluded — so that past
+                    predictions can't bias later ones.
+
+                    The only memory that exists is the Predictor's **short-term session
+                    context**, scoped to a single run: its own ReAct thought/action/observation
+                    trace, captured by the `SubagentStop` hook (or written directly by the local
+                    simulator) to `outputs/.trace/predictor_latest.json`, and fed back to the
+                    `did` guardrail subagent as grounding evidence for its during- and
+                    post-generation checks. It is **overwritten on every run**, never accumulated.
+                    """
+                )
+                memory_refresh_btn = gr.Button("🔄 Load Latest Session Trace", variant="secondary")
+                memory_trace_view = gr.Markdown(
+                    "Click above to load `outputs/.trace/predictor_latest.json`, if a run has produced one."
+                )
+                memory_refresh_btn.click(fn=load_latest_trace_ui, outputs=[memory_trace_view])
+
         # Footer
         gr.HTML(
             """
@@ -874,19 +1046,37 @@ FORCE_LIGHT_THEME_HEAD = """
 
 if __name__ == "__main__":
     demo = build_app()
-    # No color overrides here: the Soft theme's own light-mode tokens
-    # (white/off-white blocks, dark slate text) are used as-is. The
-    # previous version pinned body/block/input colors to a dark-navy
-    # palette for BOTH the light and dark token slots — so forcing
-    # ?__theme=light still rendered dark, since "light mode" itself was
-    # defined as dark navy. The header banner, metric cards, and audit
-    # badges in CUSTOM_CSS stay intentionally dark-accented; they carry
-    # their own explicit (light) text colors, so they stay readable
-    # against the now-light page background.
+    # Only the LIGHT-mode token slots are overridden here (deliberately no
+    # "_dark" counterparts) — the previous version pinned both slots to a
+    # dark-navy palette, which broke contrast once ?__theme=light was forced
+    # (light mode itself was then defined as dark navy). The header banner,
+    # metric cards, and audit badges in CUSTOM_CSS stay intentionally
+    # dark-accented; they carry their own explicit (light) text colors, so
+    # they stay readable against the light page background.
+    #
+    # Body font size is bumped by 1px over the Soft theme's default text_md
+    # (14px); backgrounds/text below are pushed a shade deeper than the
+    # stock Soft theme's very pale slate so panels read as distinct blocks
+    # rather than blending into a washed-out white page.
+    body_text_size = sizes.Size(
+        name="text_md_plus1",
+        xxs="12px", xs="13px", sm="15px", md="17px", lg="19px", xl="25px", xxl="29px",
+    )
     theme = gr.themes.Soft(
         primary_hue="teal",
         secondary_hue="blue",
         neutral_hue="slate",
+        text_size=body_text_size,
+    ).set(
+        background_fill_primary="#dce4ee",
+        body_background_fill="#dce4ee",
+        block_background_fill="#eef2f7",
+        block_border_color="#94a3b8",
+        panel_background_fill="#e4eaf1",
+        input_background_fill="#f1f5f9",
+        body_text_color="#0f172a",
+        block_label_text_color="#1e293b",
+        block_title_text_color="#0f172a",
     )
     demo.queue()
     demo.launch(

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+TRACE_PATH = REPO_ROOT / "outputs" / ".trace" / "predictor_latest.json"
 sys.path.insert(0, str(REPO_ROOT / "mcp_server"))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
@@ -88,6 +89,23 @@ def check_integrity() -> dict[str, Any]:
 def generate_checksum_manifest() -> dict[str, Any]:
     """Generate or update the SHA-256 baseline manifest."""
     return verify_data_integrity.generate()
+
+
+def get_latest_session_trace() -> dict[str, Any] | None:
+    """Load the Predictor's most recent short-term session trace.
+
+    This is the only "memory" the system carries — the ReAct
+    thought/action/observation trace for a single run, written by the
+    `SubagentStop` hook (or the local simulator) to
+    outputs/.trace/predictor_latest.json and overwritten on every run,
+    never accumulated across runs.
+    """
+    if not TRACE_PATH.exists():
+        return None
+    with open(TRACE_PATH, encoding="utf-8") as f:
+        steps = json.load(f)
+    mtime = TRACE_PATH.stat().st_mtime
+    return {"steps": steps, "mtime": mtime}
 
 
 def get_available_seasons() -> list[int]:

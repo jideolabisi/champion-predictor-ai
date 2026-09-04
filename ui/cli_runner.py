@@ -22,7 +22,7 @@ from typing import Any, Iterator
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PREDICTIONS_DIR = REPO_ROOT / "outputs" / "predictions"
 
-DEFAULT_MAX_BUDGET_USD = 3.0
+DEFAULT_MAX_BUDGET_USD = 5.0
 DEFAULT_TIMEOUT_SECONDS = 900
 
 # Tools the champion-predictor skill's control flow actually needs: Task (to
@@ -178,10 +178,15 @@ def run_real_predictor_stream(
             if etype == "system" and obj.get("subtype") == "init":
                 yield {"type": "log", "text": f"Session started (model: {obj.get('model')}, mcp: {obj.get('mcp_servers')})"}
             elif etype == "assistant":
+                # Rendered as an explicit ReAct Thought/Action pair per block:
+                # free text is the model's reasoning for what to do next
+                # (Thought), a tool_use is the action it takes on that
+                # reasoning (Action). The matching Observation arrives later
+                # as a separate "user" event carrying the tool_result.
                 for block in obj.get("message", {}).get("content", []):
                     btype = block.get("type")
                     if btype == "text" and block.get("text", "").strip():
-                        yield {"type": "log", "text": f"{prefix}{block['text'].strip()}"}
+                        yield {"type": "log", "text": f"{prefix}Thought: {block['text'].strip()}"}
                     elif btype == "tool_use":
                         name = block.get("name", "tool")
                         if name == "Task":
@@ -191,10 +196,28 @@ def run_real_predictor_stream(
                                 or "subagent"
                             )
                             task_labels[block.get("id", "")] = label
-                            yield {"type": "log", "text": f"{prefix}Invoking {label} subagent..."}
+                            yield {"type": "log", "text": f"{prefix}Action: Invoke {label} subagent..."}
                         else:
                             summary = json.dumps(block.get("input", {}))[:160]
-                            yield {"type": "log", "text": f"{prefix}-> {name}({summary})"}
+                            yield {"type": "log", "text": f"{prefix}Action: {name}({summary})"}
+            elif etype == "user":
+                # Tool results come back as a "user" event's tool_result
+                # content blocks — this is the Observation half of the
+                # Thought/Action/Observation loop; the original code never
+                # surfaced these at all.
+                for block in obj.get("message", {}).get("content", []):
+                    if not isinstance(block, dict) or block.get("type") != "tool_result":
+                        continue
+                    content = block.get("content", "")
+                    if isinstance(content, list):
+                        content = " ".join(
+                            b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text"
+                        )
+                    content = str(content).strip()
+                    if not content:
+                        continue
+                    summary = content if len(content) <= 300 else content[:300] + "...[truncated]"
+                    yield {"type": "log", "text": f"{prefix}Observation: {summary}"}
             elif etype == "result":
                 result_event = obj
 

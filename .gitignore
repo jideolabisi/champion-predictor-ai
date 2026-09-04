@@ -8,3 +8,5 @@ outputs/predictions/*.json
 outputs/predictions/*.md
 outputs/.trace/
 .env
+CAPSTONE_REPORT.md
+slides/ChampionPredictorSlides.gs

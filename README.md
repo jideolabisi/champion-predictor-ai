@@ -25,8 +25,14 @@ Code itself.
 | Resources                 | `data/raw/*.csv`, `data/raw/unstructured/*.txt`                                                                                                                                                                                                                            |
 | Hooks                     | `scripts/hooks/enforce_iteration_cap.py` (`PreToolUse`), `scripts/hooks/capture_predictor_trace.py` (`SubagentStop`)                                                                                                                                                       |
 
-No GUI/web server/database — this is a CLI-driven deliverable, invoked via
-Claude Code. (A simple GUI may be added later; out of scope for now.)
+Still no database and no `anthropic` SDK dependency — the CLI-driven
+`/champion-predictor` flow in Claude Code works identically with or without
+a UI running. A Gradio web UI (`app.py`, `ui/`) has since been added on top
+of it, offering two ways to drive the pipeline: a free, instant local
+heuristic simulator that runs in-process, and a "Real Agentic Predictor"
+tab that shells out to the Claude Code CLI in headless mode
+(`ui/cli_runner.py`, via `claude -p`) to run the actual skill/subagent/hook
+pipeline and stream its output back into the page.
 
 ## Retrieval design
 

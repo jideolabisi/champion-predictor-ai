@@ -32,7 +32,7 @@ import json
 import os
 import sys
 
-MAX_TOOL_CALLS = 8
+MAX_TOOL_CALLS = 30
 TOOL_PREFIX = "mcp__champion-data__"
 
 

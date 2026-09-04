@@ -104,26 +104,59 @@ one number.
    counter and go back to step 4 with `unsupported_claims` appended as
    feedback (subject to the same cap-2 / escalation logic).
 
-9. **Finalize.** Write the result to
-   `outputs/predictions/prediction_<season>_<timestamp>.md` (PREDICT mode)
-   or `outputs/predictions/whatif_<team>_<season>_<timestamp>.md` (WHAT_IF
-   mode), containing:
-   - PREDICT mode: the 16 team probabilities as a table, sorted descending.
-   - WHAT_IF mode: baseline vs. adjusted probabilities side by side for all
-     16 teams, plus the delta explanation.
-   - The explanation (or delta explanation).
-   - The critic's final rating, and the predictor's confidence score.
-   - The validation verdict (including whether renormalization happened).
-   - DiD's three verdicts (prompt score, overconfidence verdict + suspicion
-     score, groundedness verdict) and any flagged/unsupported items.
-   - How many predictor rounds and regenerations it took, and which
-     trigger(s) fired, if any — this is the full audit trail; an
-     escalation-rate calculation later is just scanning these files.
+9. **Finalize.** Write the result as a **pair of files sharing the same
+   stem** — `outputs/predictions/prediction_<season>_<timestamp>.{md,json}`
+   (PREDICT mode) or `outputs/predictions/whatif_<team>_<season>_<timestamp>.{md,json}`
+   (WHAT_IF mode). The UI's "Real Agentic Predictor" tab reads the `.json`
+   file to populate its Probabilities/Chart/Guardrails panels — without it,
+   those panels have nothing structured to show, only the `.md` narrative.
+   Always write both files, in this order:
+
+   a. **The `.md` file** — human-readable report containing:
+      - PREDICT mode: the 16 team probabilities as a table, sorted
+        descending.
+      - WHAT_IF mode: baseline vs. adjusted probabilities side by side for
+        all 16 teams, plus the delta explanation.
+      - The explanation (or delta explanation).
+      - The critic's final rating, and the predictor's confidence score.
+      - The validation verdict (including whether renormalization
+        happened).
+      - DiD's three verdicts (prompt score, overconfidence verdict +
+        suspicion score, groundedness verdict) and any flagged/unsupported
+        items.
+      - How many predictor rounds and regenerations it took, and which
+        trigger(s) fired, if any — this is the full audit trail; an
+        escalation-rate calculation later is just scanning these files.
+
+   b. **The `.json` file** — the same information as machine-readable data,
+      with exactly these top-level keys (`null` any that don't apply to the
+      mode; use the *final* values — i.e. post-renormalization
+      probabilities if that happened in step 7):
+      ```json
+      {
+        "mode": "predict",
+        "season": 2026,
+        "probabilities": {"ARI": 4.5, "...": "...all 16 team codes..."},
+        "confidence": 72,
+        "explanation": "...",
+        "adjusted_probabilities": null,
+        "delta_explanation": null,
+        "target_team": null,
+        "scenario": null,
+        "validation": { "...": "the full verdict JSON from step 7, verbatim" },
+        "did": {
+          "pre_generation": { "...": "the full step-2 output, verbatim" },
+          "during_generation": { "...": "the full step-4 output, verbatim" },
+          "post_generation": { "...": "the full step-8 output, verbatim" }
+        },
+        "critic": { "...": "the full step-5 output, verbatim" }
+      }
+      ```
 
    Then present a concise summary to the user: top-3 teams with
    probabilities (or the scenario's before/after for the target team in
    WHAT_IF mode), one-paragraph rationale, critic rating, confidence score,
-   and the output file path.
+   and the output file path(s).
 
 ## Notes
 

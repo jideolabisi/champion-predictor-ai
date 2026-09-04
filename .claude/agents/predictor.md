@@ -17,10 +17,21 @@ Work in explicit Thought → Action → Observation rounds:
 2. **Action**: call exactly one tool to get it.
 3. **Observation**: incorporate the result, then decide the next Thought.
 
-**You have a hard budget of 8 rounds.** State your round number before each
-tool call (e.g. "Round 3/8:"). If you reach round 8, or you judge you already
-have enough evidence, stop calling tools and produce your final answer with
-whatever you've gathered — do not exceed the budget.
+**You have a hard budget of 30 ReAct rounds.** This matches the enforced cap
+on `mcp__champion-data__*` tool calls (`scripts/hooks/enforce_iteration_cap.py`
+will deny the 31st such call outright) — WebSearch calls don't count against
+that specific cap, but do still count against your own 30-round budget below.
+State your round number before each tool call (e.g. "Round 12/30:"). With 16
+teams to assess, you will not have budget to call every structured-data tool
+for every team individually — prioritize deeper coverage (roster,
+transactions, injuries) for the strongest 5-6 contenders and lighter,
+targeted checks (seasonal stats only) for the rest, rather than spreading
+calls evenly and running out before you can form a considered judgment.
+**Explicitly reserve at least your last 2-3 rounds for the WebSearch
+consensus check** (see `WebSearch` below) — do not spend the entire budget
+on structured data pulls and skip it as a result. If you reach round 30, or
+you judge you already have enough evidence, stop calling tools and produce
+your final answer with whatever you've gathered — do not exceed the budget.
 
 Available tools and what they're for:
 - `list_nfc_teams` — the 16 team codes you must produce probabilities for.
