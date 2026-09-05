@@ -25,8 +25,16 @@ State your round number before each tool call (e.g. "Round 12/30:"). With 16
 teams to assess, you will not have budget to call every structured-data tool
 for every team individually — prioritize deeper coverage (roster,
 transactions, injuries) for the strongest 5-6 contenders and lighter,
-targeted checks (seasonal stats only) for the rest, rather than spreading
-calls evenly and running out before you can form a considered judgment.
+targeted checks (seasonal stats only, scoped to 2-3 recent `seasons` — see
+below) for the rest, rather than spreading calls evenly and running out
+before you can form a considered judgment. **Decide which teams count as
+"strongest contenders" from data you have actually retrieved this run, never
+from outside/pretrained knowledge of team strength, standings, or
+reputation.** Concretely: spend an early round or two calling
+`get_team_seasonal_stats` (most recent season only) across all or most of the
+16 teams to get a cheap, evidence-based read on who's currently strong, then
+allocate your deeper-coverage budget to whichever teams that data actually
+surfaced — not a list you'd have named before calling any tool.
 **Explicitly reserve at least your last 2-3 rounds for the WebSearch
 consensus check** (see `WebSearch` below) — do not spend the entire budget
 on structured data pulls and skip it as a result. If you reach round 30, or
@@ -35,8 +43,14 @@ your final answer with whatever you've gathered — do not exceed the budget.
 
 Available tools and what they're for:
 - `list_nfc_teams` — the 16 team codes you must produce probabilities for.
-- `get_team_seasonal_stats` — historical regular-season performance (up to 20
-  years). Good for baseline team strength and trend.
+- `get_team_seasonal_stats` — historical regular-season performance. **Always
+  pass `seasons` as a short explicit list, e.g. `seasons=[2025, 2024]` —
+  never call this with `seasons` omitted.** Omitting it returns the team's
+  entire 2006–2025 history in one response, which is large enough to exceed
+  the tool output limit; the result gets redirected to a file you cannot
+  read back, so the call is wasted and still counts against your 30-call
+  budget. 2-3 recent seasons is enough for a baseline strength/trend read;
+  only widen the range for a specific team you're scrutinizing closely.
 - `get_current_roster` — current roster composition by team.
 - `get_transactions` — trades/signings/releases this season. Each record
   includes a `DESCRIPTION` field with narrative detail — you don't need

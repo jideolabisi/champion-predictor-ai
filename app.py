@@ -12,8 +12,10 @@ from __future__ import annotations
 
 import datetime
 import functools
+import html
 import json
 import re
+import time
 import traceback
 from typing import Any
 import pandas as pd
@@ -42,7 +44,11 @@ from ui.prediction_service import (
     list_saved_predictions,
     load_prediction_file,
 )
-from ui.cli_runner import DEFAULT_MAX_BUDGET_USD, run_real_predictor_stream
+from ui.cli_runner import (
+    DEFAULT_MAX_BUDGET_USD,
+    resume_real_predictor_stream,
+    run_real_predictor_stream,
+)
 
 # Season choices span the historical dataset plus the current forward-looking
 # season (which has no completed stats yet, only roster/transaction data).
@@ -53,18 +59,62 @@ SEASON_CHOICES = sorted({_CURRENT_SEASON, *_HISTORICAL_SEASONS}, reverse=True)
 # Custom CSS for dark sports analytics aesthetic
 CUSTOM_CSS = """
 .gradio-container {
-    max-width: 1350px !important;
+    max-width: 1750px !important;
     margin: 0 auto !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 .header-box {
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #004c54 100%);
     color: white;
-    padding: 24px 30px;
-    border-radius: 12px;
-    margin-bottom: 20px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    margin-bottom: 10px;
     border: 1px solid #334155;
     box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.tab-intro {
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+    margin-bottom: 6px !important;
+}
+.trace-box {
+    max-height: 460px;
+    overflow-y: auto;
+    background: #0f172a !important;
+    border-radius: 8px;
+    border: 1px solid #334155 !important;
+    padding: 10px 14px !important;
+}
+.trace-box .prose,
+.trace-box p {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px;
+    color: #cbd5e1 !important;
+    white-space: pre-wrap;
+}
+.trace-thought { color: #38bdf8; font-weight: 700; }
+.trace-action { color: #fbbf24; font-weight: 700; }
+.trace-observation { color: #34d399; font-weight: 700; }
+.trace-round { color: #f472b6; font-weight: 700; }
+.trace-label { color: #c084fc; font-weight: 700; }
+/* Targets the tab-bar button by its stable data-tab-id (set via
+   TabItem(id=...)) rather than elem_classes — elem_classes on a TabItem
+   lands on its *content panel*, not the nav button itself, which would
+   otherwise leak this styling onto every button/label inside the tab. */
+button[data-tab-id="tab_real_agent"] {
+    color: #0f766e !important;
+    font-weight: 800 !important;
+}
+.key-feature-text {
+    color: #0f766e;
+    font-weight: 800;
+}
+.elapsed-clock {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin: 0 0 8px 2px;
 }
 .metric-card {
     background: #1e293b;
@@ -113,6 +163,94 @@ CUSTOM_CSS = """
     font-weight: 600;
 }
 """
+
+# Forces the Reasoning Trace textarea to jump to its bottom on every value
+# update. gr.Textbox's own `autoscroll=True` only reliably fires on the
+# first render — on the rapid-fire successive yields of a streaming
+# generator (one per log line) it stops keeping up, leaving the newest line
+# scrolled out of view. Bound to each trace box's `.change` event below, so
+# it re-runs after every streamed chunk lands in the DOM.
+SCROLL_TRACE_JS = """
+() => {
+    document.querySelectorAll('.trace-box, .trace-box *').forEach((el) => {
+        if (el.scrollHeight > el.clientHeight + 2) {
+            el.scrollTop = el.scrollHeight;
+        }
+    });
+}
+"""
+
+# Client-side "Running..." stopwatch for the Real Agentic Predictor tab.
+# Runs entirely in the browser (no Python round-trip) so it ticks every
+# second regardless of how sparsely the run's log events actually arrive.
+# Started on the Run button's own click event; stops itself once
+# agent_status's text shows one of the terminal-state icons (or reverts to
+# idle without ever having started, e.g. the "confirm the checkbox first"
+# guard path).
+START_CLOCK_JS = """
+() => {
+    const clockEl = document.getElementById('agent-elapsed-clock');
+    const statusEl = document.getElementById('agent-status');
+    if (!clockEl || !statusEl) return;
+    if (window.__championElapsedTimer) clearInterval(window.__championElapsedTimer);
+    const start = Date.now();
+    clockEl.textContent = '';
+    window.__championElapsedTimer = setInterval(() => {
+        const statusText = statusEl.innerText || '';
+        const secs = Math.floor((Date.now() - start) / 1000);
+        const done = /✅|⚠️|❌/.test(statusText);
+        const idleGuard = statusText.includes('⚪') && secs >= 3;
+        if (done || idleGuard) {
+            clearInterval(window.__championElapsedTimer);
+            if (idleGuard && !done) clockEl.textContent = '';
+            return;
+        }
+        const m = Math.floor(secs / 60);
+        const s = secs % 60;
+        clockEl.textContent = '⏱ ' + (m ? m + 'm ' + s + 's' : s + 's') + ' elapsed';
+    }, 1000);
+}
+"""
+
+
+_TRACE_STRUCTURAL_RE = re.compile(r"\b(Thought|Action|Observation)(:)")
+_TRACE_ROUND_RE = re.compile(r"\bRound \d+/\d+\b")
+_TRACE_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]+:)\*\*")
+_TRACE_KEYWORD_CLASSES = {"Thought": "trace-thought", "Action": "trace-action", "Observation": "trace-observation"}
+
+
+def _format_trace_markdown(raw_text: str) -> str:
+    """Bold/color the ReAct trace's structural markers — Thought:/Action:/
+    Observation:, 'Round X/30', and bolded summary labels like '**Summary
+    of evidence gathered:**' — so they stand out from the surrounding
+    reasoning prose in the Reasoning Trace panel. HTML-escapes the raw log
+    text first (it can embed arbitrary tool-observation content) before
+    adding our own styling tags, so nothing in the underlying data can
+    inject markup — the trace Markdown boxes render with sanitize_html=False
+    specifically so these tags survive, which is only safe because of this
+    escape step.
+    """
+    if not raw_text:
+        return raw_text
+    escaped = html.escape(raw_text)
+    escaped = _TRACE_STRUCTURAL_RE.sub(
+        lambda m: f'<span class="{_TRACE_KEYWORD_CLASSES[m.group(1)]}">{m.group(1)}{m.group(2)}</span>', escaped
+    )
+    escaped = _TRACE_ROUND_RE.sub(lambda m: f'<span class="trace-round">{m.group(0)}</span>', escaped)
+    escaped = _TRACE_BOLD_LABEL_RE.sub(lambda m: f'<strong class="trace-label">{m.group(1)}</strong>', escaped)
+    return escaped
+
+
+def _render_log(log_lines: list[str]) -> str:
+    return _format_trace_markdown("\n".join(log_lines))
+
+
+def _format_duration(seconds: float) -> str:
+    """Render an elapsed-time float as e.g. '45s' or '3m 12s', for the
+    final status/log line once a real predictor run finishes."""
+    total = max(0, int(seconds))
+    m, s = divmod(total, 60)
+    return f"{m}m {s}s" if m else f"{s}s"
 
 
 def _handle_errors(fn):
@@ -256,24 +394,25 @@ def run_simulator_ui(mode_choice: str, season_val: int, target_team: str, scenar
 
     # Render the ReAct-style trace into the log panel to mirror the shape of
     # the real agentic run's live log, even though this executes synchronously.
-    log_lines = [f"Running local {mode} simulation for season {season_val}...\n"]
+    mode_prefix = "@predictor.Predict/What-If "
+    log_lines = [f"• {mode_prefix}Running local {mode} simulation for season {season_val}...\n"]
     for step in result["trace"]:
         log_lines.append(
-            f"[Round {step['round']}] Thought: {step['thought']}\n"
+            f"• {mode_prefix}[Round {step['round']}] Thought: {step['thought']}\n"
             f"  Action: {step['action']}\n"
             f"  Observation: {step['observation']}\n"
         )
     did = result["did"]
     log_lines.append(
-        f"Guardrails — DiD pre-gen: {did['pre_generation']['verdict']} | "
+        f"• @did.DiD Summary — pre-gen: {did['pre_generation']['verdict']} | "
         f"during-gen: {did['during_generation']['overconfidence_verdict']} | "
         f"post-gen: {did['post_generation']['groundedness_verdict']}"
     )
     log_lines.append(
-        f"Validation: {result['validation']['verdict'].upper()} | Critic: {result['critic']['rating']}"
+        f"• @Process.Validate — {result['validation']['verdict'].upper()} | Critic: {result['critic']['rating']}"
     )
-    log_lines.append(f"\nDone. Report saved: {result['filename']}")
-    log_text = "\n".join(log_lines)
+    log_lines.append(f"\n• @Process.Finalize — Done. Report saved: {result['filename']}")
+    log_text = _render_log(log_lines)
 
     probs = result["prediction"]["probabilities"]
     confidence = result["prediction"]["confidence"]
@@ -294,6 +433,55 @@ def run_simulator_ui(mode_choice: str, season_val: int, target_team: str, scenar
     return log_text, report_md, prob_md, prob_table, chart, audit_md
 
 
+def _load_real_run_report(report_stem: str, target_team: str, season_val: int):
+    """Load a just-written outputs/predictions/*.{md,json} pair into the
+    (report_md, prob_md, prob_table, chart, audit_md) shape the Real Agentic
+    Predictor tab's Result panels expect. Shared by a fresh run and a
+    resumed one (see resume_real_predictor_ui) so both render identically."""
+    data = load_prediction_file(report_stem) or {}
+    md = data.get("markdown_content") or "*Report written but could not be read back.*"
+    probs = data.get("probabilities") or data.get("prediction", {}).get("probabilities", {})
+    adj_probs = data.get("adjusted_probabilities") or data.get("prediction", {}).get("adjusted_probabilities")
+    confidence = data.get("confidence") or data.get("prediction", {}).get("confidence")
+
+    # The champion-predictor skill now writes a JSON companion file with
+    # structured probabilities/guardrail data (see SKILL.md step 9). For
+    # reports saved before that change (or if the JSON write is ever
+    # skipped), fall back to best-effort parsing of the markdown table
+    # instead of showing nothing.
+    if not probs and md:
+        parsed_probs, parsed_adj = _parse_probabilities_from_markdown(md)
+        if parsed_probs:
+            probs, adj_probs = parsed_probs, parsed_adj
+    if confidence is None and md:
+        confidence = _parse_confidence_from_markdown(md)
+
+    if adj_probs:
+        chart = create_whatif_comparison_chart(probs, adj_probs, target_team=target_team)
+    elif probs:
+        chart = create_probability_chart(probs, f"Real Agentic Prediction — {season_val}")
+    else:
+        chart = gr.update()
+
+    if probs:
+        prob_table = _build_whatif_table(probs, adj_probs, target_team) if adj_probs else _build_leaderboard_table(probs)
+        conf_line = f"**Predictor Confidence**: `{confidence}%`" if confidence is not None else "*Confidence score not reported as structured data.*"
+        prob_md = f"### 🏆 Win Probability Leaderboard\n{conf_line}"
+    else:
+        prob_table = gr.update()
+        prob_md = "*Structured probability data isn't available for this report — the full narrative (including the probability table) is in the Result - Analysis tab.*"
+
+    did = data.get("did") or {}
+    validation = data.get("validation") or {}
+    critic = data.get("critic") or {}
+    if did or validation or critic:
+        audit_md = _build_audit_markdown(validation, did, critic, report_stem)
+    else:
+        audit_md = "*Structured guardrail verdicts aren't available for this report — the skill reports them in prose in the Result - Analysis tab instead.*"
+
+    return md, prob_md, prob_table, chart, audit_md
+
+
 def run_real_predictor_ui(
     mode_choice: str,
     season_val: int,
@@ -307,6 +495,19 @@ def run_real_predictor_ui(
     its output as it completes. Unlike the other tabs, this is a genuine
     multi-minute agentic run, not a local heuristic — gated behind an
     explicit confirmation checkbox and a hard per-run budget cap.
+
+    Outputs (12): agent_log, agent_report_md, agent_prob_md, agent_prob_table,
+    agent_chart, agent_audit_md, agent_status, agent_run_btn,
+    agent_session_state, agent_reply_box, agent_reply_btn, agent_raw_log_state.
+    The last three exist because the orchestrator can pause mid-run for a
+    human-in-the-loop decision it can't get answered headlessly (see
+    resume_real_predictor_ui) — when that happens, agent_session_state
+    captures the session to resume and the free-form reply box/button
+    become visible so the user can answer in their own words, whatever the
+    pause is actually asking. agent_raw_log_state carries the plain-text
+    (unstyled) log alongside the rendered agent_log, since resuming has to
+    append to and re-render the *raw* text — re-escaping the already
+    HTML-styled agent_log value would double-escape it.
     """
     if not confirmed:
         yield (
@@ -321,15 +522,18 @@ def run_real_predictor_ui(
             gr.update(),
             "⚪ **Not started** — check the confirmation box first.",
             gr.update(),
+            gr.update(), gr.update(visible=False, value=""), gr.update(visible=False), gr.update(),
         )
         return
 
     mode = "what_if" if mode_choice == "What-If" else "predict"
-    log_lines = ["Starting real predictor run — this can take several minutes...\n"]
+    log_lines = [f"• Starting real predictor run — this can take several minutes...\n"]
+    start_time = time.time()
     yield (
-        "\n".join(log_lines), "*Running...*", gr.update(), gr.update(), gr.update(), gr.update(),
+        _render_log(log_lines), "*Running...*", gr.update(), gr.update(), gr.update(), gr.update(),
         "🟠 **Running...** This can take several minutes — the button is disabled until it finishes.",
         gr.update(interactive=False),
+        None, gr.update(visible=False, value=""), gr.update(visible=False), "\n".join(log_lines),
     )
 
     try:
@@ -343,8 +547,8 @@ def run_real_predictor_ui(
             if event["type"] == "log":
                 log_lines.append(event["text"])
                 yield (
-                    "\n".join(log_lines), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
-                    gr.update(), gr.update(),
+                    _render_log(log_lines), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), "\n".join(log_lines),
                 )
                 continue
 
@@ -352,76 +556,152 @@ def run_real_predictor_ui(
             result_event = event.get("result_event") or {}
             cost = result_event.get("total_cost_usd")
             cost_note = f" (cost: ${cost:.4f})" if cost is not None else ""
+            duration_ms = result_event.get("duration_ms")
+            elapsed_seconds = (duration_ms / 1000) if duration_ms is not None else (time.time() - start_time)
+            duration_note = f" (time: {_format_duration(elapsed_seconds)})"
+            session_id = event.get("session_id")
 
             if event["report_stem"]:
-                data = load_prediction_file(event["report_stem"]) or {}
-                md = data.get("markdown_content") or "*Report written but could not be read back.*"
-                probs = data.get("probabilities") or data.get("prediction", {}).get("probabilities", {})
-                adj_probs = data.get("adjusted_probabilities") or data.get("prediction", {}).get("adjusted_probabilities")
-                confidence = data.get("confidence") or data.get("prediction", {}).get("confidence")
-
-                # The champion-predictor skill now writes a JSON companion
-                # file with structured probabilities/guardrail data (see
-                # SKILL.md step 9). For reports saved before that change
-                # (or if the JSON write is ever skipped), fall back to
-                # best-effort parsing of the markdown table instead of
-                # showing nothing.
-                if not probs and md:
-                    parsed_probs, parsed_adj = _parse_probabilities_from_markdown(md)
-                    if parsed_probs:
-                        probs, adj_probs = parsed_probs, parsed_adj
-                if confidence is None and md:
-                    confidence = _parse_confidence_from_markdown(md)
-
-                if adj_probs:
-                    chart = create_whatif_comparison_chart(probs, adj_probs, target_team=target_team)
-                elif probs:
-                    chart = create_probability_chart(probs, f"Real Agentic Prediction — {season_val}")
-                else:
-                    chart = gr.update()
-
-                if probs:
-                    prob_table = _build_whatif_table(probs, adj_probs, target_team) if adj_probs else _build_leaderboard_table(probs)
-                    conf_line = f"**Predictor Confidence**: `{confidence}%`" if confidence is not None else "*Confidence score not reported as structured data.*"
-                    prob_md = f"### 🏆 Win Probability Leaderboard\n{conf_line}"
-                else:
-                    prob_table = gr.update()
-                    prob_md = "*Structured probability data isn't available for this report — the full narrative (including the probability table) is in the Result - Analysis tab.*"
-
-                did = data.get("did") or {}
-                validation = data.get("validation") or {}
-                critic = data.get("critic") or {}
-                if did or validation or critic:
-                    audit_md = _build_audit_markdown(validation, did, critic, event["report_stem"])
-                else:
-                    audit_md = "*Structured guardrail verdicts aren't available for this report — the skill reports them in prose in the Result - Analysis tab instead.*"
-
-                log_lines.append(f"\nDone. Report saved: {event['report_stem']}{cost_note}")
+                md, prob_md, prob_table, chart, audit_md = _load_real_run_report(event["report_stem"], target_team, season_val)
+                log_lines.append(f"\n• @Process.Finalize — Done. Report saved: {event['report_stem']}{cost_note}{duration_note}")
                 yield (
-                    "\n".join(log_lines), md, prob_md, prob_table, chart, audit_md,
-                    f"✅ **Done.** Report saved: `{event['report_stem']}`{cost_note}",
+                    _render_log(log_lines), md, prob_md, prob_table, chart, audit_md,
+                    f"✅ **Done.** Report saved: `{event['report_stem']}`{cost_note}{duration_note}",
                     gr.update(interactive=True),
+                    session_id, gr.update(visible=False, value=""), gr.update(visible=False), "\n".join(log_lines),
                 )
             else:
                 status = "completed without writing a report" if event["ok"] else "failed"
                 explanation = event.get("error") or "No further detail was returned."
-                log_lines.append(f"\nRun {status}{cost_note}.")
+                log_lines.append(f"\n• @Process.Finalize — Run {status}{cost_note}{duration_note}.")
                 icon = "⚠️" if event["ok"] else "❌"
+                awaiting_decision = bool(event.get("awaiting_decision"))
                 yield (
-                    "\n".join(log_lines), f"### Run {status}\n\n{explanation}",
+                    _render_log(log_lines), f"### Run {status}\n\n{explanation}",
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    f"{icon} **Run {status}**{cost_note}.",
+                    f"{icon} **Run {status}**{cost_note}{duration_note}.",
                     gr.update(interactive=True),
+                    session_id,
+                    gr.update(visible=awaiting_decision, value=""), gr.update(visible=awaiting_decision),
+                    "\n".join(log_lines),
                 )
     except Exception as exc:
         traceback.print_exc()
-        log_lines.append(f"\nError: {exc}")
+        duration_note = f" (time: {_format_duration(time.time() - start_time)})"
+        log_lines.append(f"\n• @Process.Finalize — Error{duration_note}: {exc}")
         yield (
-            "\n".join(log_lines), "", gr.update(), gr.update(), gr.update(), gr.update(),
-            f"❌ **Error**: {exc}",
+            _render_log(log_lines), "", gr.update(), gr.update(), gr.update(), gr.update(),
+            f"❌ **Error**{duration_note}: {exc}",
             gr.update(interactive=True),
+            gr.update(), gr.update(visible=False, value=""), gr.update(visible=False), "\n".join(log_lines),
         )
         raise gr.Error(f"Real predictor run failed: {exc}") from exc
+
+
+def resume_real_predictor_ui(
+    reply_text: str,
+    session_id: str | None,
+    season_val: int,
+    target_team: str,
+    max_budget: float,
+    existing_raw_log: str,
+):
+    """Continue a run that paused for a human-in-the-loop decision (see
+    run_real_predictor_ui's `awaiting_decision` handling) by replying into
+    the same Claude Code session via --resume, instead of starting a fresh
+    predictor pipeline. `reply_text` is whatever the user typed into the
+    free-form reply box — bound via agent_reply_btn.click() in build_app().
+    `existing_raw_log` comes from agent_raw_log_state (the plain-text log),
+    not the rendered agent_log Markdown — appending to and re-rendering the
+    already-styled Markdown value would double-escape it. Same 12-output
+    shape as run_real_predictor_ui.
+    """
+    if not reply_text or not reply_text.strip():
+        yield (
+            _format_trace_markdown(existing_raw_log), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
+            "❌ **Error**: type your reply into the box before sending.",
+            gr.update(interactive=True),
+            session_id, gr.update(visible=True), gr.update(visible=True), existing_raw_log,
+        )
+        return
+
+    if not session_id:
+        yield (
+            _format_trace_markdown(existing_raw_log), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
+            "❌ **Error**: no active session to resume — the original run may already be finished.",
+            gr.update(interactive=True),
+            gr.update(), gr.update(visible=False, value=""), gr.update(visible=False), existing_raw_log,
+        )
+        return
+
+    log_lines = [existing_raw_log] if existing_raw_log else []
+    start_time = time.time()
+    log_lines.append(f"• Resuming with your reply: {reply_text}\n")
+    yield (
+        _render_log(log_lines), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
+        "🟠 **Running...** Resuming the paused run — the button is disabled until it finishes.",
+        gr.update(interactive=False),
+        session_id, gr.update(visible=False, value=""), gr.update(visible=False), "\n".join(log_lines),
+    )
+
+    try:
+        for event in resume_real_predictor_stream(
+            session_id=session_id,
+            reply_text=reply_text,
+            max_budget_usd=float(max_budget),
+        ):
+            if event["type"] == "log":
+                log_lines.append(event["text"])
+                yield (
+                    _render_log(log_lines), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
+                    gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), "\n".join(log_lines),
+                )
+                continue
+
+            # event["type"] == "done"
+            result_event = event.get("result_event") or {}
+            cost = result_event.get("total_cost_usd")
+            cost_note = f" (cost: ${cost:.4f})" if cost is not None else ""
+            duration_ms = result_event.get("duration_ms")
+            elapsed_seconds = (duration_ms / 1000) if duration_ms is not None else (time.time() - start_time)
+            duration_note = f" (time: {_format_duration(elapsed_seconds)})"
+            new_session_id = event.get("session_id") or session_id
+
+            if event["report_stem"]:
+                md, prob_md, prob_table, chart, audit_md = _load_real_run_report(event["report_stem"], target_team, season_val)
+                log_lines.append(f"\n• @Process.Finalize — Done. Report saved: {event['report_stem']}{cost_note}{duration_note}")
+                yield (
+                    _render_log(log_lines), md, prob_md, prob_table, chart, audit_md,
+                    f"✅ **Done.** Report saved: `{event['report_stem']}`{cost_note}{duration_note}",
+                    gr.update(interactive=True),
+                    new_session_id, gr.update(visible=False, value=""), gr.update(visible=False), "\n".join(log_lines),
+                )
+            else:
+                status = "completed without writing a report" if event["ok"] else "failed"
+                explanation = event.get("error") or "No further detail was returned."
+                log_lines.append(f"\n• @Process.Finalize — Run {status}{cost_note}{duration_note}.")
+                icon = "⚠️" if event["ok"] else "❌"
+                awaiting_decision = bool(event.get("awaiting_decision"))
+                yield (
+                    _render_log(log_lines), f"### Run {status}\n\n{explanation}",
+                    gr.update(), gr.update(), gr.update(), gr.update(),
+                    f"{icon} **Run {status}**{cost_note}{duration_note}.",
+                    gr.update(interactive=True),
+                    new_session_id,
+                    gr.update(visible=awaiting_decision, value=""), gr.update(visible=awaiting_decision),
+                    "\n".join(log_lines),
+                )
+    except Exception as exc:
+        traceback.print_exc()
+        duration_note = f" (time: {_format_duration(time.time() - start_time)})"
+        log_lines.append(f"\n• @Process.Finalize — Error{duration_note}: {exc}")
+        yield (
+            _render_log(log_lines), "", gr.update(), gr.update(), gr.update(), gr.update(),
+            f"❌ **Error**{duration_note}: {exc}",
+            gr.update(interactive=True),
+            gr.update(), gr.update(visible=False, value=""), gr.update(visible=False), "\n".join(log_lines),
+        )
+        raise gr.Error(f"Resume failed: {exc}") from exc
 
 
 @_handle_errors
@@ -618,8 +898,8 @@ def build_app() -> gr.Blocks:
             gr.HTML(
                 """
                 <div class="header-box">
-                    <h1 style="margin: 0; font-size: 28px; font-weight: 800; color: #ffffff;">🏈 Champion Predictor AI</h1>
-                    <p style="margin: 6px 0 0 0; font-size: 15px; color: #94a3b8;">
+                    <h1 style="margin: 0; font-size: 19px; font-weight: 800; color: #ffffff;">🏈 Champion Predictor AI</h1>
+                    <p style="margin: 3px 0 0 0; font-size: 12.5px; color: #94a3b8;">
                         NFC Championship Win Probability Engine &amp; What-If Decision Support System
                     </p>
                 </div>
@@ -634,11 +914,10 @@ def build_app() -> gr.Blocks:
                 gr.Markdown(
                     """
                     ### 🧪 Fast Local Heuristic Simulator
-                    Runs the same Predict / What-If pipeline and report format as the **Real
-                    Agentic Predictor** tab, but computed instantly in-process from a deterministic
-                    local heuristic over the CSVs — no Claude Code CLI call, no usage cost. Useful
-                    for exercising the guardrail/report pipeline (or demoing the UI) for free.
-                    """
+                    Same Predict / What-If pipeline and report format as **Real Agentic Predictor**,
+                    computed instantly in-process — no Claude Code CLI call, no usage cost.
+                    """,
+                    elem_classes=["tab-intro"],
                 )
                 with gr.Row():
                     with gr.Column(scale=1):
@@ -704,16 +983,14 @@ def build_app() -> gr.Blocks:
 
                         sim_run_btn = gr.Button("⚡ Run Local Simulation", variant="primary", size="lg")
 
-                    with gr.Column(scale=2):
+                    with gr.Column(scale=3, min_width=640):
                         with gr.Tabs():
                             with gr.TabItem("Reasoning Trace"):
-                                sim_log = gr.Textbox(
-                                    label="Simulated Reasoning Trace",
-                                    lines=20,
-                                    max_lines=20,
-                                    interactive=False,
-                                    autoscroll=True,
+                                sim_log = gr.Markdown(
                                     show_label=False,
+                                    elem_classes=["trace-box"],
+                                    sanitize_html=False,
+                                    line_breaks=True,
                                 )
                             with gr.TabItem("Result - Analysis"):
                                 sim_report_md = gr.Markdown("*Run the simulator to see the report here.*")
@@ -730,20 +1007,19 @@ def build_app() -> gr.Blocks:
                     inputs=[sim_mode, sim_season, sim_team, sim_scenario],
                     outputs=[sim_log, sim_report_md, sim_prob_md, sim_prob_table, sim_chart, sim_audit_md],
                 )
+                sim_log.change(fn=None, js=SCROLL_TRACE_JS, inputs=None, outputs=None)
 
             # ----------------------------------------------------
             # TAB 2: Real Agentic Predictor (Claude Code CLI)
             # ----------------------------------------------------
             with gr.TabItem("🤖 Real Agentic Predictor", id="tab_real_agent"):
                 gr.Markdown(
-                    f"""
-                    ### 🤖 Run the Real ReAct Predictor Pipeline
-                    **This tab launches the actual `champion-predictor` skill in Claude Code** — the
-                    `predictor` subagent doing real ReAct tool-calling reasoning over the MCP data
-                    tools (and WebSearch), reviewed by the `critic` subagent, checked by the
-                    three-stage `did` guardrail, and validated deterministically — exactly as if
-                    you'd typed `/champion-predictor` yourself.
                     """
+                    ### 🤖 Run the <span class="key-feature-text">Real Agentic Predictor</span> Pipeline
+                    Launches the actual `champion-predictor` skill in Claude Code — `predictor`,
+                    `critic`, and the three-stage `did` guardrail, validated deterministically.
+                    """,
+                    elem_classes=["tab-intro"],
                 )
                 with gr.Row():
                     with gr.Column(scale=1):
@@ -792,18 +1068,31 @@ def build_app() -> gr.Blocks:
                                 value=False,
                             )
                         agent_run_btn = gr.Button("▶ Run Real Predictor", variant="stop", size="lg")
-                        agent_status = gr.Markdown("⚪ **Idle**", elem_classes=["status-line"])
+                        agent_status = gr.Markdown("⚪ **Idle**", elem_classes=["status-line"], elem_id="agent-status")
+                        agent_elapsed = gr.HTML('<span id="agent-elapsed-clock" class="elapsed-clock"></span>')
+                        agent_session_state = gr.State(None)
+                        agent_raw_log_state = gr.State("")
+                        agent_reply_box = gr.Textbox(
+                            label="Your reply — how would you like to proceed?",
+                            placeholder=(
+                                "The run paused for your decision (see the log/status above). "
+                                "Type your answer in your own words — e.g. 'proceed as-is but "
+                                "strip the unverified claim', 'do one more revision focused on "
+                                "X', 'regenerate with that feedback' — then Send."
+                            ),
+                            lines=3,
+                            visible=False,
+                        )
+                        agent_reply_btn = gr.Button("📨 Send Reply", variant="primary", visible=False)
 
-                    with gr.Column(scale=2):
+                    with gr.Column(scale=3, min_width=640):
                         with gr.Tabs():
                             with gr.TabItem("Reasoning Trace"):
-                                agent_log = gr.Textbox(
-                                    label="Live Agent Log",
-                                    lines=20,
-                                    max_lines=20,
-                                    interactive=False,
-                                    autoscroll=True,
+                                agent_log = gr.Markdown(
                                     show_label=False,
+                                    elem_classes=["trace-box"],
+                                    sanitize_html=False,
+                                    line_breaks=True,
                                 )
                             with gr.TabItem("Result - Analysis"):
                                 agent_report_md = gr.Markdown("*Run the predictor to see the report here.*")
@@ -815,14 +1104,31 @@ def build_app() -> gr.Blocks:
                             with gr.TabItem("Guardrails & Verification"):
                                 agent_audit_md = gr.Markdown("*Run the predictor to see the guardrail verdicts here.*")
 
+                agent_run_outputs = [
+                    agent_log, agent_report_md, agent_prob_md, agent_prob_table, agent_chart, agent_audit_md,
+                    agent_status, agent_run_btn,
+                    agent_session_state, agent_reply_box, agent_reply_btn, agent_raw_log_state,
+                ]
                 agent_run_btn.click(
                     fn=run_real_predictor_ui,
                     inputs=[agent_mode, agent_season, agent_team, agent_scenario, agent_budget, agent_confirm],
-                    outputs=[
-                        agent_log, agent_report_md, agent_prob_md, agent_prob_table, agent_chart, agent_audit_md,
-                        agent_status, agent_run_btn,
-                    ],
+                    outputs=agent_run_outputs,
                 )
+                agent_run_btn.click(fn=None, js=START_CLOCK_JS, inputs=None, outputs=None)
+                agent_log.change(fn=None, js=SCROLL_TRACE_JS, inputs=None, outputs=None)
+
+                # Fires only when the run paused for a human-in-the-loop
+                # decision (agent_reply_box/agent_reply_btn become visible
+                # only in that state — see run_real_predictor_ui). Resumes
+                # the same Claude Code session (agent_session_state) with
+                # whatever the user typed into agent_reply_box, instead of
+                # starting a fresh run or being limited to a fixed choice.
+                agent_reply_btn.click(
+                    fn=resume_real_predictor_ui,
+                    inputs=[agent_reply_box, agent_session_state, agent_season, agent_team, agent_budget, agent_raw_log_state],
+                    outputs=agent_run_outputs,
+                )
+                agent_reply_btn.click(fn=None, js=START_CLOCK_JS, inputs=None, outputs=None)
 
             # ----------------------------------------------------
             # TAB 3: Data Explorer
@@ -1067,6 +1373,7 @@ if __name__ == "__main__":
         secondary_hue="blue",
         neutral_hue="slate",
         text_size=body_text_size,
+        spacing_size=sizes.spacing_sm,
     ).set(
         background_fill_primary="#dce4ee",
         body_background_fill="#dce4ee",

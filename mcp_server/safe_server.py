@@ -62,14 +62,35 @@ def get_team_seasonal_stats(team: str, seasons: Optional[list[int]] = None) -> l
     return rows
 
 
+# roster_2026.csv carries ~36 columns per player, most of them cross-platform
+# ID/URL fields (espn_id, sportradar_id, yahoo_id, pff_id, headshot_url, ...)
+# with no predictive value. Returning them all pushed a single team's ~90
+# players (e.g. GB) past the tool output token limit, silently redirecting
+# the result to a file the predictor can't read back — wasting the call
+# entirely. These are the fields actually useful for assessing roster
+# strength; trimming to them keeps every team's roster comfortably under
+# the limit without losing anything the predictor uses.
+_ROSTER_FIELDS = (
+    "team", "jersey_number", "player_name", "position",
+    "depth_chart_position", "years_exp", "age", "college", "status",
+)
+
+
 @mcp.tool()
-def get_current_roster(team: str) -> list[dict] | str:
-    """Get the current roster for an NFC team (code like 'PHI' or 'SF')."""
+def get_current_roster(team: str, position: Optional[str] = None) -> list[dict] | str:
+    """Get the current roster for an NFC team (code like 'PHI' or 'SF'),
+    trimmed to the fields relevant for assessing roster strength (name,
+    position, depth chart slot, experience, age, college, status). Optionally
+    filter to one position group (e.g. 'QB', 'WR', 'OL') to narrow further.
+    """
     if _BACKTEST_MODE:
         return _NOT_AVAILABLE_IN_BACKTEST
     rows = load_csv("roster_2026.csv")
     team_code = normalize_team(team)
-    return [r for r in rows if normalize_team(r.get("team")) == team_code]
+    rows = [r for r in rows if normalize_team(r.get("team")) == team_code]
+    if position:
+        rows = filter_rows(rows, position=position.strip().upper())
+    return [{k: r.get(k) for k in _ROSTER_FIELDS} for r in rows]
 
 
 @mcp.tool()
