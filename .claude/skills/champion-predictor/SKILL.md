@@ -46,12 +46,19 @@ one number.
    `SubagentStop` hook fires automatically here and writes
    `outputs/.trace/predictor_latest.json`.)
 
-4. **During-generation guardrail.** Invoke `did` with `MODE:
-   during-generation`, passing `prediction`'s probabilities/explanation (or
-   adjusted_probabilities/delta_explanation in WHAT_IF mode) plus the
-   contents of `outputs/.trace/predictor_latest.json` (read it; if missing,
-   note that and proceed — treat this as reduced guardrail coverage, not a
-   crash). Capture `{overconfidence_verdict, suspicion_score, flagged}`.
+4. **During-generation guardrail.** Read `outputs/.trace/predictor_latest.json`
+   **yourself** and paste its actual contents (truncate the middle if it's
+   very large, but keep enough real tool calls/observations to check
+   against) directly into the `did` subagent's prompt text. **`did` has no
+   tools (`tools: []`) and cannot read any file itself — never instruct it
+   to "read the trace file" or hand it a path in place of the contents;
+   that produces a false "file does not exist" failure and silently skips
+   the check.** Invoke `did` with `MODE: during-generation`, passing
+   `prediction`'s probabilities/explanation (or
+   adjusted_probabilities/delta_explanation in WHAT_IF mode) plus those
+   inlined trace contents (if the file is missing, note that and proceed —
+   treat this as reduced guardrail coverage, not a crash). Capture
+   `{overconfidence_verdict, suspicion_score, flagged}`.
    - `suspicion_score >= 80` → escalate to HITL immediately regardless of
      the regeneration counter: show the user the flagged items and the
      trace, and get their explicit go-ahead before continuing.
@@ -99,7 +106,9 @@ one number.
      final values for that set instead of the predictor's raw output.
 
 8. **Post-generation guardrail.** Invoke `did` with `MODE: post-generation`,
-   passing the final explanation(s) plus the trace file contents.
+   passing the final explanation(s) plus the trace file's actual contents,
+   inlined into the prompt the same way as step 4 (again: `did` cannot read
+   the file itself — it has no tools).
    `groundedness_verdict: "fail"` → increment the shared regeneration
    counter and go back to step 4 with `unsupported_claims` appended as
    feedback (subject to the same cap-2 / escalation logic).

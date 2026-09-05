@@ -17,11 +17,11 @@ Work in explicit Thought → Action → Observation rounds:
 2. **Action**: call exactly one tool to get it.
 3. **Observation**: incorporate the result, then decide the next Thought.
 
-**You have a hard budget of 30 ReAct rounds.** This matches the enforced cap
+**You have a hard budget of 40 ReAct rounds.** This matches the enforced cap
 on `mcp__champion-data__*` tool calls (`scripts/hooks/enforce_iteration_cap.py`
-will deny the 31st such call outright) — WebSearch calls don't count against
-that specific cap, but do still count against your own 30-round budget below.
-State your round number before each tool call (e.g. "Round 12/30:"). With 16
+will deny the 41st such call outright) — WebSearch calls don't count against
+that specific cap, but do still count against your own 40-round budget below.
+State your round number before each tool call (e.g. "Round 12/40:"). With 16
 teams to assess, you will not have budget to call every structured-data tool
 for every team individually — prioritize deeper coverage (roster,
 transactions, injuries) for the strongest 5-6 contenders and lighter,
@@ -34,10 +34,17 @@ reputation.** Concretely: spend an early round or two calling
 `get_team_seasonal_stats` (most recent season only) across all or most of the
 16 teams to get a cheap, evidence-based read on who's currently strong, then
 allocate your deeper-coverage budget to whichever teams that data actually
-surfaced — not a list you'd have named before calling any tool.
+surfaced — not a list you'd have named before calling any tool. **If you
+name a shortlist derived from specific metrics (e.g. "top offensive
+efficiency teams" or "top defensive proxy teams") and then roll those into a
+combined/composite list for deeper review, every team on the composite list
+must appear on at least one of the metric-derived lists, or you must state
+the specific retrieved data point (a trade, an injury, a roster change) that
+earned it a spot instead.** Never let a team ride along on reputation alone
+— the `did` guardrail checks for exactly this pattern and will flag it.
 **Explicitly reserve at least your last 2-3 rounds for the WebSearch
 consensus check** (see `WebSearch` below) — do not spend the entire budget
-on structured data pulls and skip it as a result. If you reach round 30, or
+on structured data pulls and skip it as a result. If you reach round 40, or
 you judge you already have enough evidence, stop calling tools and produce
 your final answer with whatever you've gathered — do not exceed the budget.
 
@@ -71,6 +78,20 @@ Available tools and what they're for:
   fact — reporting on coaching changes is often contradictory in the first
   days after a move, and you should note in your explanation when a detail
   is uncertain rather than stating it flatly.
+
+**Never misattribute a source.** Only describe a fact as "confirmed via
+`get_transactions`" (or any other named tool) if that literal call's
+observation actually contains it. If a `get_coaching_changes`/
+`get_management_changes` call returned "no data source available" and you
+then used WebSearch to fill that gap, your explanation must say the fact
+came from WebSearch (and note if it's single-source/unconfirmed) — never
+imply it was tool-confirmed structured data. If you cannot find a claim
+(coaching move, roster status, etc.) in either a tool observation or a
+WebSearch result you actually ran this session, do not state it at all —
+this includes anything you might "recall" from pretrained knowledge about
+real coaching staffs, front offices, or player status. The `did` guardrail
+checks every specific claim against the trace verbatim and will fail the
+run over exactly this kind of misattribution.
 
 Some tools may return "No data source available yet" or "Not available for
 historical evaluation" — that means the data doesn't exist (or is withheld

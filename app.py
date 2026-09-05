@@ -46,6 +46,7 @@ from ui.prediction_service import (
 )
 from ui.cli_runner import (
     DEFAULT_MAX_BUDGET_USD,
+    TRACE_DIVIDER_SENTINEL,
     resume_real_predictor_stream,
     run_real_predictor_stream,
 )
@@ -59,7 +60,7 @@ SEASON_CHOICES = sorted({_CURRENT_SEASON, *_HISTORICAL_SEASONS}, reverse=True)
 # Custom CSS for dark sports analytics aesthetic
 CUSTOM_CSS = """
 .gradio-container {
-    max-width: 1750px !important;
+    max-width: 1960px !important;
     margin: 0 auto !important;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -78,27 +79,54 @@ CUSTOM_CSS = """
     margin-bottom: 6px !important;
 }
 .trace-box {
-    max-height: 460px;
+    max-height: 620px;
     overflow-y: auto;
-    background: #0f172a !important;
+    background: #f8fafc !important;
     border-radius: 8px;
-    border: 1px solid #334155 !important;
-    padding: 10px 14px !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 10px 16px !important;
 }
 .trace-box,
 .trace-box * {
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    font-size: 13px;
-    color: #cbd5e1 !important;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #1e293b !important;
 }
 .trace-box {
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
-.trace-thought { color: #38bdf8 !important; font-weight: 700; }
-.trace-action { color: #fbbf24 !important; font-weight: 700; }
-.trace-observation { color: #34d399 !important; font-weight: 700; }
-.trace-round { color: #f472b6 !important; font-weight: 700; }
-.trace-label { color: #c084fc !important; font-weight: 700; }
+.trace-thought { color: #0369a1 !important; font-weight: 700; }
+.trace-action { color: #b45309 !important; font-weight: 700; }
+.trace-observation { color: #047857 !important; font-weight: 700; }
+.trace-round { color: #be185d !important; font-weight: 700; }
+.trace-label { color: #7e22ce !important; font-weight: 700; }
+.trace-divider {
+    border: none;
+    border-top: 2px dashed #94a3b8;
+    margin: 12px 0;
+}
+/* Per-phase "@Agent.Phase" tag badges — one distinct color per pipeline
+   stage so a long trace is scannable at a glance. Matches the tag strings
+   produced by ui/cli_runner.py's phase tuples and app.py's local
+   simulator log lines. */
+.trace-tag {
+    display: inline-block;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 5px;
+    margin-right: 2px;
+}
+.trace-tag-integrity { color: #334155 !important; background: #e2e8f0; }
+.trace-tag-did-pre { color: #92400e !important; background: #fef3c7; }
+.trace-tag-predictor { color: #1d4ed8 !important; background: #dbeafe; }
+.trace-tag-did-during { color: #9a3412 !important; background: #ffedd5; }
+.trace-tag-critic { color: #6b21a8 !important; background: #f3e8ff; }
+.trace-tag-validate { color: #166534 !important; background: #dcfce7; }
+.trace-tag-did-post { color: #9f1239 !important; background: #ffe4e6; }
+.trace-tag-process { color: #334155 !important; background: #e2e8f0; }
+.trace-tag-default { color: #475569 !important; background: #f1f5f9; }
 /* Targets the tab-bar button by its stable data-tab-id (set via
    TabItem(id=...)) rather than elem_classes — elem_classes on a TabItem
    lands on its *content panel*, not the nav button itself, which would
@@ -215,31 +243,80 @@ START_CLOCK_JS = """
 """
 
 
+# Scrolls the human-in-the-loop reply box into view and focuses it whenever
+# it's actually visible. Bound to agent_status's .change event (fires on
+# every yield) rather than agent_reply_box's own .change, because Gradio's
+# gr.update(visible=True, value="") doesn't reliably fire a "change" event
+# when the value was already "" — the status line, in contrast, always
+# changes text on the yield that reveals the box, so it's a reliable hook.
+# Checking offsetParent (null when the element or an ancestor is
+# display:none) makes this a no-op on every other status update.
+SCROLL_TO_REPLY_JS = """
+() => {
+    const box = document.getElementById('agent-reply-box');
+    if (box && box.offsetParent !== null) {
+        box.scrollIntoView({behavior: 'smooth', block: 'center'});
+        const textarea = box.querySelector('textarea');
+        if (textarea) textarea.focus();
+    }
+}
+"""
+
+
 _TRACE_STRUCTURAL_RE = re.compile(r"\b(Thought|Action|Observation)(:)")
 _TRACE_ROUND_RE = re.compile(r"\bRound \d+/\d+\b")
 _TRACE_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]+:)\*\*")
 _TRACE_KEYWORD_CLASSES = {"Thought": "trace-thought", "Action": "trace-action", "Observation": "trace-observation"}
 
+# Matches the "@Agent.Phase" tags cli_runner.py/app.py's local simulator
+# prefix every trace line with (e.g. "@predictor.Predict", "@DiD.Pre-Gen"),
+# so each pipeline stage can get its own color-coded badge. Falls back to a
+# neutral badge for any tag not in the map, rather than leaving it unstyled.
+_TRACE_TAG_RE = re.compile(r"@([A-Za-z]+\.[A-Za-z0-9-]+)")
+_TRACE_TAG_CLASSES = {
+    "Process.Integrity-Check": "trace-tag-integrity",
+    "DiD.Pre-Gen": "trace-tag-did-pre",
+    "predictor.Predict": "trace-tag-predictor",
+    "predictor.What-If": "trace-tag-predictor",
+    "DiD.During-Gen": "trace-tag-did-during",
+    "critic.Critique": "trace-tag-critic",
+    "Process.Validate": "trace-tag-validate",
+    "DiD.Post-Gen": "trace-tag-did-post",
+    "Process.Finalize": "trace-tag-process",
+    "DiD.Summary": "trace-tag-did-post",
+}
+
+# Sentinel line (see ui/cli_runner.py's TRACE_DIVIDER_SENTINEL) marking a
+# transition to a new agent/phase — rendered as an actual <hr> so the trace
+# is easy to scan for where one agent's activity ends and the next begins.
+_TRACE_DIVIDER_RE = re.compile(rf"^{re.escape(TRACE_DIVIDER_SENTINEL)}$", re.MULTILINE)
+
 
 def _format_trace_markdown(raw_text: str) -> str:
     """Bold/color the ReAct trace's structural markers — Thought:/Action:/
-    Observation:, 'Round X/30', and bolded summary labels like '**Summary
-    of evidence gathered:**' — so they stand out from the surrounding
-    reasoning prose in the Reasoning Trace panel. HTML-escapes the raw log
-    text first (it can embed arbitrary tool-observation content) before
-    adding our own styling tags, so nothing in the underlying data can
-    inject markup — the trace Markdown boxes render with sanitize_html=False
-    specifically so these tags survive, which is only safe because of this
-    escape step.
+    Observation:, 'Round X/N', bolded summary labels like '**Summary of
+    evidence gathered:**', and per-phase "@Agent.Phase" tag badges — so
+    they stand out from the surrounding reasoning prose in the Reasoning
+    Trace panel. Also turns phase-transition sentinel lines into a visual
+    divider. HTML-escapes the raw log text first (it can embed arbitrary
+    tool-observation content) before adding our own styling tags, so
+    nothing in the underlying data can inject markup — the trace Markdown
+    boxes render with sanitize_html=False specifically so these tags
+    survive, which is only safe because of this escape step.
     """
     if not raw_text:
         return raw_text
     escaped = html.escape(raw_text)
+    escaped = _TRACE_DIVIDER_RE.sub('<hr class="trace-divider" />', escaped)
     escaped = _TRACE_STRUCTURAL_RE.sub(
         lambda m: f'<span class="{_TRACE_KEYWORD_CLASSES[m.group(1)]}">{m.group(1)}{m.group(2)}</span>', escaped
     )
     escaped = _TRACE_ROUND_RE.sub(lambda m: f'<span class="trace-round">{m.group(0)}</span>', escaped)
     escaped = _TRACE_BOLD_LABEL_RE.sub(lambda m: f'<strong class="trace-label">{m.group(1)}</strong>', escaped)
+    escaped = _TRACE_TAG_RE.sub(
+        lambda m: f'<span class="trace-tag {_TRACE_TAG_CLASSES.get(m.group(1), "trace-tag-default")}">@{m.group(1)}</span>',
+        escaped,
+    )
     return escaped
 
 
@@ -407,14 +484,17 @@ def run_simulator_ui(mode_choice: str, season_val: int, target_team: str, scenar
             f"  Observation: {step['observation']}\n"
         )
     did = result["did"]
+    log_lines.append(TRACE_DIVIDER_SENTINEL)
     log_lines.append(
-        f"• @did.DiD Summary — pre-gen: {did['pre_generation']['verdict']} | "
+        f"• @DiD.Summary — pre-gen: {did['pre_generation']['verdict']} | "
         f"during-gen: {did['during_generation']['overconfidence_verdict']} | "
         f"post-gen: {did['post_generation']['groundedness_verdict']}"
     )
+    log_lines.append(TRACE_DIVIDER_SENTINEL)
     log_lines.append(
         f"• @Process.Validate — {result['validation']['verdict'].upper()} | Critic: {result['critic']['rating']}"
     )
+    log_lines.append(TRACE_DIVIDER_SENTINEL)
     log_lines.append(f"\n• @Process.Finalize — Done. Report saved: {result['filename']}")
     log_text = _render_log(log_lines)
 
@@ -578,12 +658,18 @@ def run_real_predictor_ui(
                 status = "completed without writing a report" if event["ok"] else "failed"
                 explanation = event.get("error") or "No further detail was returned."
                 log_lines.append(f"\n• @Process.Finalize — Run {status}{cost_note}{duration_note}.")
-                icon = "⚠️" if event["ok"] else "❌"
                 awaiting_decision = bool(event.get("awaiting_decision"))
+                icon = "⏸" if awaiting_decision else ("⚠️" if event["ok"] else "❌")
+                status_text = (
+                    f"{icon} **Awaiting your decision** — see the reply box below and the "
+                    f"explanation in Result - Analysis.{cost_note}{duration_note}"
+                    if awaiting_decision
+                    else f"{icon} **Run {status}**{cost_note}{duration_note}."
+                )
                 yield (
                     _render_log(log_lines), f"### Run {status}\n\n{explanation}",
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    f"{icon} **Run {status}**{cost_note}{duration_note}.",
+                    status_text,
                     gr.update(interactive=True),
                     session_id,
                     gr.update(visible=awaiting_decision, value=""), gr.update(visible=awaiting_decision),
@@ -688,12 +774,18 @@ def resume_real_predictor_ui(
                 status = "completed without writing a report" if event["ok"] else "failed"
                 explanation = event.get("error") or "No further detail was returned."
                 log_lines.append(f"\n• @Process.Finalize — Run {status}{cost_note}{duration_note}.")
-                icon = "⚠️" if event["ok"] else "❌"
                 awaiting_decision = bool(event.get("awaiting_decision"))
+                icon = "⏸" if awaiting_decision else ("⚠️" if event["ok"] else "❌")
+                status_text = (
+                    f"{icon} **Awaiting your decision** — see the reply box below and the "
+                    f"explanation in Result - Analysis.{cost_note}{duration_note}"
+                    if awaiting_decision
+                    else f"{icon} **Run {status}**{cost_note}{duration_note}."
+                )
                 yield (
                     _render_log(log_lines), f"### Run {status}\n\n{explanation}",
                     gr.update(), gr.update(), gr.update(), gr.update(),
-                    f"{icon} **Run {status}**{cost_note}{duration_note}.",
+                    status_text,
                     gr.update(interactive=True),
                     new_session_id,
                     gr.update(visible=awaiting_decision, value=""), gr.update(visible=awaiting_decision),
@@ -898,6 +990,31 @@ def view_report_detail_ui(selected_stem: str):
     return md_content, chart
 
 
+_MORE_TAB_MAP = {
+    "🧪 Non-Agentic Simulator": "tab_simulator",
+    "📊 Data Explorer": "tab_data",
+    "🔍 RAG Search": "tab_faiss",
+    "🛡️ Audit": "tab_audit",
+    "🧠 Memory": "tab_memory",
+}
+
+
+def _select_more_tab(choice: str | None):
+    """Reveal exactly the one hidden tab picked from the '⋯' selector
+    (hiding whichever other one was previously shown) and switch the tab
+    bar to it. Picking '⋯' itself (the reset value) hides all of them and
+    returns to just the Real Agentic Predictor tab."""
+    target_id = _MORE_TAB_MAP.get(choice or "")
+    return (
+        gr.update(visible=(target_id == "tab_simulator")),
+        gr.update(visible=(target_id == "tab_data")),
+        gr.update(visible=(target_id == "tab_faiss")),
+        gr.update(visible=(target_id == "tab_audit")),
+        gr.update(visible=(target_id == "tab_memory")),
+        gr.Tabs(selected=target_id or "tab_real_agent"),
+    )
+
+
 # Build the Gradio App Interface
 def build_app() -> gr.Blocks:
     with gr.Blocks(title="Champion Predictor AI") as demo:
@@ -914,11 +1031,37 @@ def build_app() -> gr.Blocks:
                 """
             )
 
-        with gr.Tabs() as main_tabs:
+        # "More tabs" selector — sits just above/right of the tab strip.
+        # Only "Real Agentic Predictor" is a visible tab by default; the
+        # other five stay hidden (visible=False on their TabItem below)
+        # until picked here, and picking one hides whichever was
+        # previously shown — so the tab bar never carries more than the
+        # two tabs (Real Agentic Predictor + the one currently picked).
+        # Re-selecting "⋯" hides the extra tab again.
+        with gr.Row():
+            with gr.Column(scale=10):
+                pass
+            with gr.Column(scale=2, min_width=170):
+                more_tabs_selector = gr.Dropdown(
+                    choices=[
+                        "⋯",
+                        "🧪 Non-Agentic Simulator",
+                        "📊 Data Explorer",
+                        "🔍 RAG Search",
+                        "🛡️ Audit",
+                        "🧠 Memory",
+                    ],
+                    value="⋯",
+                    show_label=False,
+                    container=False,
+                    elem_id="more-tabs-selector",
+                )
+
+        with gr.Tabs(selected="tab_real_agent") as main_tabs:
             # ----------------------------------------------------
             # TAB 1: Non-Agentic Simulator (local heuristic, no LLM)
             # ----------------------------------------------------
-            with gr.TabItem("🧪 Non-Agentic Simulator (For Test)", id="tab_simulator"):
+            with gr.TabItem("🧪 Non-Agentic Simulator (For Test)", id="tab_simulator", visible=False) as tabitem_simulator:
                 gr.Markdown(
                     """
                     ### 🧪 Fast Local Heuristic Simulator
@@ -991,7 +1134,7 @@ def build_app() -> gr.Blocks:
 
                         sim_run_btn = gr.Button("⚡ Run Local Simulation", variant="primary", size="lg")
 
-                    with gr.Column(scale=3, min_width=640):
+                    with gr.Column(scale=4, min_width=760):
                         with gr.Tabs():
                             with gr.TabItem("Reasoning Trace"):
                                 sim_log = gr.HTML(
@@ -1023,8 +1166,9 @@ def build_app() -> gr.Blocks:
                 gr.Markdown(
                     """
                     ### 🤖 Run the <span class="key-feature-text">Real Agentic Predictor</span> Pipeline
-                    Launches the actual `champion-predictor` skill in Claude Code — `predictor`,
-                    `critic`, and the three-stage `did` guardrail, validated deterministically.
+                    Workflow: Integrity check → DiD pre-generation guardrail → Predictor → DiD
+                    during-generation guardrail → Critic → deterministic validation → DiD
+                    post-generation guardrail → final result.
                     """,
                     elem_classes=["tab-intro"],
                 )
@@ -1089,10 +1233,11 @@ def build_app() -> gr.Blocks:
                             ),
                             lines=3,
                             visible=False,
+                            elem_id="agent-reply-box",
                         )
                         agent_reply_btn = gr.Button("📨 Send Reply", variant="primary", visible=False)
 
-                    with gr.Column(scale=3, min_width=640):
+                    with gr.Column(scale=4, min_width=760):
                         with gr.Tabs():
                             with gr.TabItem("Reasoning Trace"):
                                 agent_log = gr.HTML(
@@ -1122,6 +1267,7 @@ def build_app() -> gr.Blocks:
                 )
                 agent_run_btn.click(fn=None, js=START_CLOCK_JS, inputs=None, outputs=None)
                 agent_log.change(fn=None, js=SCROLL_TRACE_JS, inputs=None, outputs=None)
+                agent_status.change(fn=None, js=SCROLL_TO_REPLY_JS, inputs=None, outputs=None)
 
                 # Fires only when the run paused for a human-in-the-loop
                 # decision (agent_reply_box/agent_reply_btn become visible
@@ -1139,7 +1285,7 @@ def build_app() -> gr.Blocks:
             # ----------------------------------------------------
             # TAB 3: Data Explorer
             # ----------------------------------------------------
-            with gr.TabItem("📊 Data Explorer", id="tab_data"):
+            with gr.TabItem("📊 Data Explorer", id="tab_data", visible=False) as tabitem_data:
                 with gr.Tabs():
                     # Sub-tab: Seasonal Stats
                     with gr.TabItem("📈 Historical Team Stats (2006–2025)"):
@@ -1229,7 +1375,7 @@ def build_app() -> gr.Blocks:
             # ----------------------------------------------------
             # TAB 4: FAISS Vector RAG Search
             # ----------------------------------------------------
-            with gr.TabItem("🔍 RAG Search", id="tab_faiss"):
+            with gr.TabItem("🔍 RAG Search", id="tab_faiss", visible=False) as tabitem_faiss:
                 gr.Markdown(
                     """
                     ### 🧠 Semantic Search over Unstructured Financial Narratives
@@ -1257,7 +1403,7 @@ def build_app() -> gr.Blocks:
             # ----------------------------------------------------
             # TAB 5: Audit Traces & Guardrail Inspector
             # ----------------------------------------------------
-            with gr.TabItem("🛡️ Audit", id="tab_audit"):
+            with gr.TabItem("🛡️ Audit", id="tab_audit", visible=False) as tabitem_audit:
                 with gr.Row():
                     with gr.Column(scale=1):
                         gr.Markdown("### 🔒 Data Integrity Verification")
@@ -1302,7 +1448,7 @@ def build_app() -> gr.Blocks:
             # ----------------------------------------------------
             # TAB 6: Memory
             # ----------------------------------------------------
-            with gr.TabItem("🧠 Memory", id="tab_memory"):
+            with gr.TabItem("🧠 Memory", id="tab_memory", visible=False) as tabitem_memory:
                 gr.Markdown(
                     """
                     ### 🧠 Memory Design
@@ -1324,6 +1470,12 @@ def build_app() -> gr.Blocks:
                     "Click above to load `outputs/.trace/predictor_latest.json`, if a run has produced one."
                 )
                 memory_refresh_btn.click(fn=load_latest_trace_ui, outputs=[memory_trace_view])
+
+        more_tabs_selector.change(
+            fn=_select_more_tab,
+            inputs=[more_tabs_selector],
+            outputs=[tabitem_simulator, tabitem_data, tabitem_faiss, tabitem_audit, tabitem_memory, main_tabs],
+        )
 
         # Footer
         gr.HTML(

@@ -118,16 +118,24 @@ def _newest_new_report_stem(before: set[str]) -> str | None:
 
 # Maps the live event stream onto SKILL.md's fixed 9-step control flow so the
 # UI's trace log can tag every line with which step produced it (e.g.
-# "@did.DiD Pre-Gen"), not just which subagent. `current_phase` below is a
+# "@DiD.Pre-Gen"), not just which subagent. `current_phase` below is a
 # single (agent, activity) pair rather than a per-subagent map because the
 # steps run strictly sequentially in this ReAct architecture — never
 # concurrently — so "whatever tool_use most recently declared a phase" is
 # always the right phase for every line until the next one declares another.
 _PHASE_MARKERS = (
-    ("pre-generation", ("did", "DiD Pre-Gen")),
-    ("during-generation", ("did", "DiD During-Gen")),
-    ("post-generation", ("did", "DiD Post-Gen")),
+    ("pre-generation", ("DiD", "Pre-Gen")),
+    ("during-generation", ("DiD", "During-Gen")),
+    ("post-generation", ("DiD", "Post-Gen")),
 )
+
+# A visual divider ("horizontal rule") is inserted into the log just before
+# the first line of a new phase, so a transition from one agent/activity to
+# another is easy to spot in a long trace. Rendered by app.py's
+# _format_trace_markdown, which turns this exact sentinel line into an
+# actual <hr>. Plain uppercase token (no markup) so it survives html.escape
+# unchanged and is vanishingly unlikely to collide with real trace text.
+TRACE_DIVIDER_SENTINEL = "@@TRACE_PHASE_DIVIDER@@"
 
 
 def _detect_task_phase(label: str, tool_input: dict, prior_did_calls: int, mode_label: str) -> tuple[str, str]:
@@ -146,7 +154,7 @@ def _detect_task_phase(label: str, tool_input: dict, prior_did_calls: int, mode_
         # fall back to ordinal position: did is invoked pre/during/post-gen
         # in that fixed order on a normal pass.
         ordinal = prior_did_calls % 3
-        return ("did", ("DiD Pre-Gen", "DiD During-Gen", "DiD Post-Gen")[ordinal])
+        return ("DiD", ("Pre-Gen", "During-Gen", "Post-Gen")[ordinal])
     return (label, label)
 
 
@@ -181,6 +189,10 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
     result_event: dict[str, Any] | None = None
     current_phase: tuple[str, str] | None = None
     did_call_count = 0
+    # Tracks the last phase a divider was actually emitted for, so the
+    # divider fires exactly once per transition (not once per line) and
+    # never before the very first phase of the run.
+    last_divider_phase: tuple[str, str] | None = None
 
     try:
         proc = subprocess.Popen(
@@ -249,16 +261,22 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
                             current_phase = _detect_task_phase(label, tool_input, did_call_count, mode_label)
                             if label == "did":
                                 did_call_count += 1
+                            if current_phase != last_divider_phase and last_divider_phase is not None:
+                                yield {"type": "log", "text": TRACE_DIVIDER_SENTINEL}
+                            last_divider_phase = current_phase
                             yield {"type": "log", "text": _bulletize(f"Action: Invoke {label} subagent...", current_phase)}
                         else:
                             if name == "Bash":
                                 bash_cmd = str(tool_input.get("command", ""))
                                 if "verify_data_integrity" in bash_cmd:
-                                    current_phase = ("Process", "Integrity Check")
+                                    current_phase = ("Process", "Integrity-Check")
                                 elif "validate_predictions" in bash_cmd:
                                     current_phase = ("Process", "Validate")
                             elif name == "Write" and not parent_id:
                                 current_phase = ("Process", "Finalize")
+                            if current_phase != last_divider_phase and last_divider_phase is not None:
+                                yield {"type": "log", "text": TRACE_DIVIDER_SENTINEL}
+                            last_divider_phase = current_phase
                             summary = json.dumps(tool_input)[:160]
                             yield {"type": "log", "text": _bulletize(f"Action: {name}({summary})", current_phase)}
             elif etype == "user":
@@ -338,7 +356,14 @@ def _finalize_done_event(
         error = None
         awaiting_decision = False
 
-    return {**base, "ok": ok, "error": error, "report_stem": new_stem, "result_event": result_event}
+    return {
+        **base,
+        "ok": ok,
+        "error": error,
+        "report_stem": new_stem,
+        "result_event": result_event,
+        "awaiting_decision": awaiting_decision,
+    }
 
 
 def run_real_predictor_stream(
