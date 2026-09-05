@@ -83,9 +83,12 @@ CUSTOM_CSS = """
    while still staying compact — it still wraps rather than clipping if the
    window is narrower than the text needs. */
 .workflow-line, .workflow-line p {
-    font-size: 14px !important;
-    line-height: 1.4 !important;
+    font-size: 16px !important;
+    line-height: 1.8 !important;
     margin: 0 !important;
+}
+.workflow-line .trace-tag {
+    font-size: 14px;
 }
 .trace-box {
     max-height: 360px;
@@ -1201,10 +1204,20 @@ def build_app() -> gr.Blocks:
             # TAB 2: Real Agentic Predictor (Claude Code CLI)
             # ----------------------------------------------------
             with gr.TabItem("🤖 Real Agentic Predictor", id="tab_real_agent"):
-                gr.Markdown(
-                    "Workflow: Integrity check → DiD pre-generation guardrail → Predictor → "
-                    "DiD during-generation guardrail → Critic → deterministic validation → "
-                    "DiD post-generation guardrail → final result.",
+                # Each stage is tagged with the same trace-tag-* class used for
+                # its "@Agent.Phase" badge in the Reasoning Trace panel, so a
+                # stage here and its later appearance in the live trace are
+                # visually the same color at a glance.
+                gr.HTML(
+                    "Workflow: "
+                    '<span class="trace-tag trace-tag-integrity">Integrity check</span> → '
+                    '<span class="trace-tag trace-tag-did-pre">DiD pre-generation guardrail</span> → '
+                    '<span class="trace-tag trace-tag-predictor">Predictor</span> → '
+                    '<span class="trace-tag trace-tag-did-during">DiD during-generation guardrail</span> → '
+                    '<span class="trace-tag trace-tag-critic">Critic</span> → '
+                    '<span class="trace-tag trace-tag-validate">deterministic validation</span> → '
+                    '<span class="trace-tag trace-tag-did-post">DiD post-generation guardrail</span> → '
+                    '<span class="trace-tag trace-tag-process">final result</span>.',
                     elem_classes=["tab-intro", "workflow-line"],
                 )
                 with gr.Row():
