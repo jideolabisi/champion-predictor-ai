@@ -9,8 +9,12 @@ try:
     rosters_2026 = nfl.import_seasonal_rosters([2026])
     
     # 2. Define the 16 franchises that belong to the NFC
+    # NOTE: nflverse's team-abbreviation convention codes the LA Rams as
+    # 'LA', not 'LAR' (confirmed by inspecting import_seasonal_rosters'
+    # actual `team` column values) — 'LAR' here silently matched zero rows
+    # and dropped the Rams from every fetch.
     nfc_teams = [
-        'ARI', 'ATL', 'CAR', 'CHI', 'DAL', 'DET', 'GB', 'LAR', 
+        'ARI', 'ATL', 'CAR', 'CHI', 'DAL', 'DET', 'GB', 'LA',
         'MIN', 'NO', 'NYG', 'PHI', 'SEA', 'SF', 'TB', 'WAS'
     ]
     
