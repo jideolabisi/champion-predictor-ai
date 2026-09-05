@@ -74,37 +74,63 @@ CUSTOM_CSS = """
     box-shadow: 0 4px 14px rgba(0,0,0,0.3);
 }
 .tab-intro {
-    font-size: 13px !important;
-    line-height: 1.35 !important;
-    margin-bottom: 6px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    margin-bottom: 4px !important;
+}
+/* Workflow summary above the Real Agentic Predictor tab. Larger than the
+   previous 11px pass (that was reported as too small to read comfortably)
+   while still staying compact — it still wraps rather than clipping if the
+   window is narrower than the text needs. */
+.workflow-line, .workflow-line p {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
 }
 .trace-box {
-    max-height: 620px;
+    max-height: 360px;
     overflow-y: auto;
-    background: #f8fafc !important;
+    background: #0f172a !important;
     border-radius: 8px;
-    border: 1px solid #cbd5e1 !important;
+    border: 1px solid #334155 !important;
     padding: 10px 16px !important;
+    /* Reserve space for the scrollbar instead of letting it overlay the
+       text column — on a narrow trace-box that overlay made the thumb
+       visually sit on top of the last few characters of each line. */
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #0f172a;
+}
+.trace-box::-webkit-scrollbar {
+    width: 11px;
+}
+.trace-box::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+.trace-box::-webkit-scrollbar-thumb {
+    background-color: #475569;
+    border-radius: 6px;
+    border: 2px solid #0f172a;
 }
 .trace-box,
 .trace-box * {
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.5;
-    color: #1e293b !important;
+    color: #cbd5e1 !important;
 }
 .trace-box {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
-.trace-thought { color: #0369a1 !important; font-weight: 700; }
-.trace-action { color: #b45309 !important; font-weight: 700; }
-.trace-observation { color: #047857 !important; font-weight: 700; }
-.trace-round { color: #be185d !important; font-weight: 700; }
-.trace-label { color: #7e22ce !important; font-weight: 700; }
+.trace-thought { color: #38bdf8 !important; font-weight: 700; }
+.trace-action { color: #fbbf24 !important; font-weight: 700; }
+.trace-observation { color: #34d399 !important; font-weight: 700; }
+.trace-round { color: #f472b6 !important; font-weight: 700; }
+.trace-label { color: #c084fc !important; font-weight: 700; }
 .trace-divider {
     border: none;
-    border-top: 2px dashed #94a3b8;
+    border-top: 2px dashed #475569;
     margin: 12px 0;
 }
 /* Per-phase "@Agent.Phase" tag badges — one distinct color per pipeline
@@ -191,6 +217,17 @@ button[data-tab-id="tab_real_agent"] {
 .confirm-box label {
     color: #78350f !important;
     font-weight: 600;
+}
+/* Pulls the "⋯ more tabs" dropdown row up so it sits on the same visual
+   line as the tab strip immediately below it, instead of taking its own
+   full row — reclaims that row's height. */
+#more-tabs-row {
+    margin-bottom: -46px;
+    position: relative;
+    z-index: 5;
+}
+#main-tabs > .tab-nav {
+    margin-top: 0;
 }
 """
 
@@ -282,6 +319,7 @@ _TRACE_TAG_CLASSES = {
     "critic.Critique": "trace-tag-critic",
     "Process.Validate": "trace-tag-validate",
     "DiD.Post-Gen": "trace-tag-did-post",
+    "Process.Verify": "trace-tag-process",
     "Process.Finalize": "trace-tag-process",
     "DiD.Summary": "trace-tag-did-post",
 }
@@ -1038,7 +1076,7 @@ def build_app() -> gr.Blocks:
         # previously shown — so the tab bar never carries more than the
         # two tabs (Real Agentic Predictor + the one currently picked).
         # Re-selecting "⋯" hides the extra tab again.
-        with gr.Row():
+        with gr.Row(elem_id="more-tabs-row"):
             with gr.Column(scale=10):
                 pass
             with gr.Column(scale=2, min_width=170):
@@ -1057,7 +1095,7 @@ def build_app() -> gr.Blocks:
                     elem_id="more-tabs-selector",
                 )
 
-        with gr.Tabs(selected="tab_real_agent") as main_tabs:
+        with gr.Tabs(selected="tab_real_agent", elem_id="main-tabs") as main_tabs:
             # ----------------------------------------------------
             # TAB 1: Non-Agentic Simulator (local heuristic, no LLM)
             # ----------------------------------------------------
@@ -1164,13 +1202,10 @@ def build_app() -> gr.Blocks:
             # ----------------------------------------------------
             with gr.TabItem("🤖 Real Agentic Predictor", id="tab_real_agent"):
                 gr.Markdown(
-                    """
-                    ### 🤖 Run the <span class="key-feature-text">Real Agentic Predictor</span> Pipeline
-                    Workflow: Integrity check → DiD pre-generation guardrail → Predictor → DiD
-                    during-generation guardrail → Critic → deterministic validation → DiD
-                    post-generation guardrail → final result.
-                    """,
-                    elem_classes=["tab-intro"],
+                    "Workflow: Integrity check → DiD pre-generation guardrail → Predictor → "
+                    "DiD during-generation guardrail → Critic → deterministic validation → "
+                    "DiD post-generation guardrail → final result.",
+                    elem_classes=["tab-intro", "workflow-line"],
                 )
                 with gr.Row():
                     with gr.Column(scale=1):
@@ -1223,19 +1258,6 @@ def build_app() -> gr.Blocks:
                         agent_elapsed = gr.HTML('<span id="agent-elapsed-clock" class="elapsed-clock"></span>')
                         agent_session_state = gr.State(None)
                         agent_raw_log_state = gr.State("")
-                        agent_reply_box = gr.Textbox(
-                            label="Your reply — how would you like to proceed?",
-                            placeholder=(
-                                "The run paused for your decision (see the log/status above). "
-                                "Type your answer in your own words — e.g. 'proceed as-is but "
-                                "strip the unverified claim', 'do one more revision focused on "
-                                "X', 'regenerate with that feedback' — then Send."
-                            ),
-                            lines=3,
-                            visible=False,
-                            elem_id="agent-reply-box",
-                        )
-                        agent_reply_btn = gr.Button("📨 Send Reply", variant="primary", visible=False)
 
                     with gr.Column(scale=4, min_width=760):
                         with gr.Tabs():
@@ -1254,6 +1276,25 @@ def build_app() -> gr.Blocks:
                                 agent_chart = gr.Plot(label="Probability Outcome", show_label=False)
                             with gr.TabItem("Guardrails & Verification"):
                                 agent_audit_md = gr.Markdown("*Run the predictor to see the guardrail verdicts here.*")
+
+                        # Placed directly below the trace/result tabs (rather
+                        # than in the left control column) so the reply box
+                        # a paused run needs is right where the user is
+                        # already looking, instead of scrolled away above
+                        # the controls.
+                        agent_reply_box = gr.Textbox(
+                            label="Your reply — how would you like to proceed?",
+                            placeholder=(
+                                "The run paused for your decision (see the log/status above). "
+                                "Type your answer in your own words — e.g. 'proceed as-is but "
+                                "strip the unverified claim', 'do one more revision focused on "
+                                "X', 'regenerate with that feedback' — then Send."
+                            ),
+                            lines=3,
+                            visible=False,
+                            elem_id="agent-reply-box",
+                        )
+                        agent_reply_btn = gr.Button("📨 Send Reply", variant="primary", visible=False)
 
                 agent_run_outputs = [
                     agent_log, agent_report_md, agent_prob_md, agent_prob_table, agent_chart, agent_audit_md,

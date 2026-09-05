@@ -272,8 +272,25 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
                                     current_phase = ("Process", "Integrity-Check")
                                 elif "validate_predictions" in bash_cmd:
                                     current_phase = ("Process", "Validate")
+                                elif not parent_id:
+                                    current_phase = ("Process", "Verify")
                             elif name == "Write" and not parent_id:
                                 current_phase = ("Process", "Finalize")
+                            elif not parent_id:
+                                # A top-level tool call with no enclosing
+                                # subagent Task — most often the orchestrator
+                                # double-checking its own trace excerpt
+                                # (SKILL.md step 4/8) with Grep/Read before
+                                # trusting it. Without this, current_phase
+                                # would still be whatever subagent phase was
+                                # last set (e.g. "DiD.During-Gen"), which
+                                # misleadingly implies the tools-less `did`
+                                # subagent itself read the file — it
+                                # structurally cannot, since did's
+                                # `tools: []` forbids it. Tag these
+                                # distinctly so the trace never looks like a
+                                # guardrail violated its own restriction.
+                                current_phase = ("Process", "Verify")
                             if current_phase != last_divider_phase and last_divider_phase is not None:
                                 yield {"type": "log", "text": TRACE_DIVIDER_SENTINEL}
                             last_divider_phase = current_phase

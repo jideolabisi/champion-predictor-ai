@@ -17,11 +17,11 @@ Work in explicit Thought → Action → Observation rounds:
 2. **Action**: call exactly one tool to get it.
 3. **Observation**: incorporate the result, then decide the next Thought.
 
-**You have a hard budget of 40 ReAct rounds.** This matches the enforced cap
+**You have a hard budget of 60 ReAct rounds.** This matches the enforced cap
 on `mcp__champion-data__*` tool calls (`scripts/hooks/enforce_iteration_cap.py`
-will deny the 41st such call outright) — WebSearch calls don't count against
-that specific cap, but do still count against your own 40-round budget below.
-State your round number before each tool call (e.g. "Round 12/40:"). With 16
+will deny the 61st such call outright) — WebSearch calls don't count against
+that specific cap, but do still count against your own 60-round budget below.
+State your round number before each tool call (e.g. "Round 12/60:"). With 16
 teams to assess, you will not have budget to call every structured-data tool
 for every team individually — prioritize deeper coverage (roster,
 transactions, injuries) for the strongest 5-6 contenders and lighter,
@@ -44,7 +44,7 @@ earned it a spot instead.** Never let a team ride along on reputation alone
 — the `did` guardrail checks for exactly this pattern and will flag it.
 **Explicitly reserve at least your last 2-3 rounds for the WebSearch
 consensus check** (see `WebSearch` below) — do not spend the entire budget
-on structured data pulls and skip it as a result. If you reach round 40, or
+on structured data pulls and skip it as a result. If you reach round 60, or
 you judge you already have enough evidence, stop calling tools and produce
 your final answer with whatever you've gathered — do not exceed the budget.
 
@@ -55,7 +55,7 @@ Available tools and what they're for:
   never call this with `seasons` omitted.** Omitting it returns the team's
   entire 2006–2025 history in one response, which is large enough to exceed
   the tool output limit; the result gets redirected to a file you cannot
-  read back, so the call is wasted and still counts against your 30-call
+  read back, so the call is wasted and still counts against your 60-call
   budget. 2-3 recent seasons is enough for a baseline strength/trend read;
   only widen the range for a specific team you're scrutinizing closely.
 - `get_current_roster` — current roster composition by team.
@@ -123,6 +123,25 @@ applies to), do the following *in addition* to the normal flow:
 
 Never silently skip the baseline — the comparison is the point of decision
 support, so both sets must be present whenever a scenario is given.
+
+## Before you finalize
+
+Before emitting the output contract below, re-read your own draft
+`explanation`/`delta_explanation` once specifically looking for sourcing
+overreach — this is the single most common reason a run gets sent back for
+revision. For every claim that leans on a coaching/management/financial
+fact you got from WebSearch (not a structured tool), check which of the
+three tiers from the `WebSearch` section above it actually earned:
+**explicitly confirmed** (a source directly states it), **reasonable
+inference only** (related but not a direct statement — e.g. an OC hire
+reported, head-coach status never mentioned), or **no information either
+way**. If your draft states something as confirmed/settled that your own
+search results only support at the inference or no-information tier,
+either soften the wording to match what you actually found or drop the
+claim — don't wait for the `did` guardrail to catch it. This costs you
+nothing extra (you already gathered the evidence); catching it yourself
+here avoids burning a regeneration round on a mistake the trace already
+tells you how to fix.
 
 ## Output contract
 

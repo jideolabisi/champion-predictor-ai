@@ -47,9 +47,18 @@ one number.
    `outputs/.trace/predictor_latest.json`.)
 
 4. **During-generation guardrail.** Read `outputs/.trace/predictor_latest.json`
-   **yourself** and paste its actual contents (truncate the middle if it's
-   very large, but keep enough real tool calls/observations to check
-   against) directly into the `did` subagent's prompt text. **`did` has no
+   **yourself**. If it's small enough, paste it in full. If it's too large
+   for the prompt, do **not** just truncate the middle by byte offset — a
+   naive head/tail cut can silently drop the one tool call that grounds the
+   run's most consequential claim (e.g. the top-ranked team's headline
+   trade), producing a false guardrail `fail` on a claim that was actually
+   grounded. Instead, build the excerpt around what you're about to check:
+   first `grep` the trace for every team code, tool name, and named
+   entity (a trade, a hire, an injury, a specific stat) that appears in
+   `prediction`'s `explanation`/`delta_explanation`, and guarantee every
+   matching line is included verbatim, in addition to enough head/tail
+   context to preserve the overall shape of the run. Paste the resulting
+   contents directly into the `did` subagent's prompt text. **`did` has no
    tools (`tools: []`) and cannot read any file itself — never instruct it
    to "read the trace file" or hand it a path in place of the contents;
    that produces a false "file does not exist" failure and silently skips
@@ -104,11 +113,20 @@ one number.
    - `verdict: "accept"` → continue to step 8. If a sum check's
      `action == "renormalized"`, use its `renormalized_probabilities` as the
      final values for that set instead of the predictor's raw output.
+   - `data_integrity_check.passed == false` (regardless of `verdict`) →
+     this is **not** a regeneration trigger — re-invoking the predictor
+     against the same broken CSV fixes nothing. Instead, carry
+     `flagged_columns`/`reason` forward and surface them prominently in the
+     final report (step 9) as a data-quality caveat, the same way a
+     turnover-margin figure was once found to rest on an all-zero
+     interceptions column.
 
 8. **Post-generation guardrail.** Invoke `did` with `MODE: post-generation`,
    passing the final explanation(s) plus the trace file's actual contents,
-   inlined into the prompt the same way as step 4 (again: `did` cannot read
-   the file itself — it has no tools).
+   inlined into the prompt using the same targeted-extraction approach as
+   step 4 — grep for the final explanation's claims first, don't rely on a
+   byte-offset truncation (again: `did` cannot read the file itself — it
+   has no tools).
    `groundedness_verdict: "fail"` → increment the shared regeneration
    counter and go back to step 4 with `unsupported_claims` appended as
    feedback (subject to the same cap-2 / escalation logic).
@@ -130,6 +148,11 @@ one number.
       - The critic's final rating, and the predictor's confidence score.
       - The validation verdict (including whether renormalization
         happened).
+      - If `data_integrity_check.passed == false`: a prominent data-quality
+        caveat naming the flagged column(s) and which explanation claims
+        they undermine — this is a known-bad-data warning, not a normal
+        validation failure, and should read as such (e.g. an explicit
+        "Critical Caveat" section, not buried in the validation table).
       - DiD's three verdicts (prompt score, overconfidence verdict +
         suspicion score, groundedness verdict) and any flagged/unsupported
         items.
