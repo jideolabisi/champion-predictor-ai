@@ -85,18 +85,20 @@ CUSTOM_CSS = """
     border: 1px solid #334155 !important;
     padding: 10px 14px !important;
 }
-.trace-box .prose,
-.trace-box p {
+.trace-box,
+.trace-box * {
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     font-size: 13px;
     color: #cbd5e1 !important;
+}
+.trace-box {
     white-space: pre-wrap;
 }
-.trace-thought { color: #38bdf8; font-weight: 700; }
-.trace-action { color: #fbbf24; font-weight: 700; }
-.trace-observation { color: #34d399; font-weight: 700; }
-.trace-round { color: #f472b6; font-weight: 700; }
-.trace-label { color: #c084fc; font-weight: 700; }
+.trace-thought { color: #38bdf8 !important; font-weight: 700; }
+.trace-action { color: #fbbf24 !important; font-weight: 700; }
+.trace-observation { color: #34d399 !important; font-weight: 700; }
+.trace-round { color: #f472b6 !important; font-weight: 700; }
+.trace-label { color: #c084fc !important; font-weight: 700; }
 /* Targets the tab-bar button by its stable data-tab-id (set via
    TabItem(id=...)) rather than elem_classes — elem_classes on a TabItem
    lands on its *content panel*, not the nav button itself, which would
@@ -394,7 +396,9 @@ def run_simulator_ui(mode_choice: str, season_val: int, target_team: str, scenar
 
     # Render the ReAct-style trace into the log panel to mirror the shape of
     # the real agentic run's live log, even though this executes synchronously.
-    mode_prefix = "@predictor.Predict/What-If "
+    # Tag reflects the actual mode run, not a fixed "Predict/What-If" label —
+    # that used to say "What-If" even on a plain Predict run.
+    mode_prefix = f"@predictor.{'What-If' if mode == 'what_if' else 'Predict'} "
     log_lines = [f"• {mode_prefix}Running local {mode} simulation for season {season_val}...\n"]
     for step in result["trace"]:
         log_lines.append(
@@ -601,6 +605,7 @@ def run_real_predictor_ui(
 def resume_real_predictor_ui(
     reply_text: str,
     session_id: str | None,
+    mode_choice: str,
     season_val: int,
     target_team: str,
     max_budget: float,
@@ -612,9 +617,11 @@ def resume_real_predictor_ui(
     predictor pipeline. `reply_text` is whatever the user typed into the
     free-form reply box — bound via agent_reply_btn.click() in build_app().
     `existing_raw_log` comes from agent_raw_log_state (the plain-text log),
-    not the rendered agent_log Markdown — appending to and re-rendering the
-    already-styled Markdown value would double-escape it. Same 12-output
-    shape as run_real_predictor_ui.
+    not the rendered agent_log HTML — appending to and re-rendering the
+    already-styled HTML value would double-escape it. `mode_choice` is the
+    *original* run's mode (Radio value, "Predict"/"What-If") — needed only
+    so the resumed trace's phase tag reflects the actual mode, not a
+    guessed default. Same 12-output shape as run_real_predictor_ui.
     """
     if not reply_text or not reply_text.strip():
         yield (
@@ -648,6 +655,7 @@ def resume_real_predictor_ui(
         for event in resume_real_predictor_stream(
             session_id=session_id,
             reply_text=reply_text,
+            mode="what_if" if mode_choice == "What-If" else "predict",
             max_budget_usd=float(max_budget),
         ):
             if event["type"] == "log":
@@ -986,11 +994,10 @@ def build_app() -> gr.Blocks:
                     with gr.Column(scale=3, min_width=640):
                         with gr.Tabs():
                             with gr.TabItem("Reasoning Trace"):
-                                sim_log = gr.Markdown(
+                                sim_log = gr.HTML(
                                     show_label=False,
                                     elem_classes=["trace-box"],
-                                    sanitize_html=False,
-                                    line_breaks=True,
+                                    autoscroll=True,
                                 )
                             with gr.TabItem("Result - Analysis"):
                                 sim_report_md = gr.Markdown("*Run the simulator to see the report here.*")
@@ -1088,11 +1095,10 @@ def build_app() -> gr.Blocks:
                     with gr.Column(scale=3, min_width=640):
                         with gr.Tabs():
                             with gr.TabItem("Reasoning Trace"):
-                                agent_log = gr.Markdown(
+                                agent_log = gr.HTML(
                                     show_label=False,
                                     elem_classes=["trace-box"],
-                                    sanitize_html=False,
-                                    line_breaks=True,
+                                    autoscroll=True,
                                 )
                             with gr.TabItem("Result - Analysis"):
                                 agent_report_md = gr.Markdown("*Run the predictor to see the report here.*")
@@ -1125,7 +1131,7 @@ def build_app() -> gr.Blocks:
                 # starting a fresh run or being limited to a fixed choice.
                 agent_reply_btn.click(
                     fn=resume_real_predictor_ui,
-                    inputs=[agent_reply_box, agent_session_state, agent_season, agent_team, agent_budget, agent_raw_log_state],
+                    inputs=[agent_reply_box, agent_session_state, agent_mode, agent_season, agent_team, agent_budget, agent_raw_log_state],
                     outputs=agent_run_outputs,
                 )
                 agent_reply_btn.click(fn=None, js=START_CLOCK_JS, inputs=None, outputs=None)

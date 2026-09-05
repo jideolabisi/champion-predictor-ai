@@ -130,9 +130,9 @@ _PHASE_MARKERS = (
 )
 
 
-def _detect_task_phase(label: str, tool_input: dict, prior_did_calls: int) -> tuple[str, str]:
+def _detect_task_phase(label: str, tool_input: dict, prior_did_calls: int, mode_label: str) -> tuple[str, str]:
     if label == "predictor":
-        return ("predictor", "Predict/What-If")
+        return ("predictor", mode_label)
     if label == "critic":
         return ("critic", "Critique")
     if label == "did":
@@ -165,7 +165,7 @@ def _bulletize(text: str, phase: tuple[str, str] | None) -> str:
     return "\n".join(out)
 
 
-def _stream_and_parse(cmd: list[str], timeout_seconds: int) -> Iterator[dict[str, Any]]:
+def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> Iterator[dict[str, Any]]:
     """Launch a `claude ... --output-format stream-json` command and yield
     `{"type": "log", "text": ...}` events (tagged with the activity-category
     phase detected from the stream, via `_detect_task_phase`/`_bulletize`) as
@@ -246,7 +246,7 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int) -> Iterator[dict[str
                                 or "subagent"
                             )
                             task_labels[block.get("id", "")] = label
-                            current_phase = _detect_task_phase(label, tool_input, did_call_count)
+                            current_phase = _detect_task_phase(label, tool_input, did_call_count, mode_label)
                             if label == "did":
                                 did_call_count += 1
                             yield {"type": "log", "text": _bulletize(f"Action: Invoke {label} subagent...", current_phase)}
@@ -398,7 +398,7 @@ def run_real_predictor_stream(
     yield {"type": "log", "text": _bulletize(f"Launching Claude Code (session {session_id}):\n  {prompt}\n", None)}
 
     final: dict[str, Any] = {}
-    for event in _stream_and_parse(cmd, timeout_seconds):
+    for event in _stream_and_parse(cmd, timeout_seconds, _mode_label(mode)):
         if event["type"] == "_result":
             final = event
             break
@@ -407,9 +407,19 @@ def run_real_predictor_stream(
     yield _finalize_done_event(final, before_stems, session_id, timeout_seconds)
 
 
+def _mode_label(mode: str) -> str:
+    """Human-readable trace tag for the predictor's current run mode — used
+    in place of the old hardcoded "Predict/What-If" phase name, which
+    labeled every predictor call the same way regardless of which mode was
+    actually running (confusingly implying a plain Predict run was somehow
+    also doing What-If)."""
+    return "What-If" if mode == "what_if" else "Predict"
+
+
 def resume_real_predictor_stream(
     session_id: str,
     reply_text: str,
+    mode: str = "predict",
     max_budget_usd: float = DEFAULT_MAX_BUDGET_USD,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
 ) -> Iterator[dict[str, Any]]:
@@ -421,6 +431,8 @@ def resume_real_predictor_stream(
 
     `max_budget_usd` should be the budget of the *original* run — this is a
     continuation of that same session/spend, not a new budget grant.
+    `mode` should be the *original* run's mode ("predict" or "what_if") —
+    used only for trace-tag labeling (see `_mode_label`), not sent to Claude.
     """
     claude_bin = find_claude_cli()
     before_stems = _existing_report_stems()
@@ -440,7 +452,7 @@ def resume_real_predictor_stream(
     yield {"type": "log", "text": _bulletize(f"Resuming session {session_id}:\n  {reply_text}\n", None)}
 
     final: dict[str, Any] = {}
-    for event in _stream_and_parse(cmd, timeout_seconds):
+    for event in _stream_and_parse(cmd, timeout_seconds, _mode_label(mode)):
         if event["type"] == "_result":
             final = event
             break
