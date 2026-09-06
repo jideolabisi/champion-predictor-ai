@@ -53,13 +53,17 @@ from ui.cli_runner import (
     run_real_predictor_stream,
 )
 
-# Model dropdown choices for the Real Agentic Predictor tab: the top-level
-# "Model" dropdown uses MODEL_CHOICES (always a concrete model); the
-# per-subagent dropdowns use SUBAGENT_MODEL_CHOICES, which prepend a
-# "(default)" option (empty string) meaning "inherit the top-level Model"
-# rather than forcing a redundant explicit choice for every subagent.
-MODEL_CHOICES = [(m.capitalize(), m) for m in AVAILABLE_MODELS]
-SUBAGENT_MODEL_CHOICES = [("(default)", "")] + MODEL_CHOICES
+# Model dropdown choices for the Real Agentic Predictor tab. These sit
+# label-less (show_label=False, container=False) on the tab-nav line itself
+# (see the "more-tabs-row" hack below) rather than in their own row inside
+# the tab content, so the subagent name is baked into each option's own
+# text — it's the only place that identity is shown once the dropdown has a
+# value selected.
+MODEL_CHOICES = [(f"Model: {m.capitalize()}", m) for m in AVAILABLE_MODELS]
+
+
+def _subagent_model_choices(label: str) -> list[tuple[str, str]]:
+    return [(f"{label}: Default", "")] + [(f"{label}: {m.capitalize()}", m) for m in AVAILABLE_MODELS]
 
 # Season choices span the historical dataset plus the current forward-looking
 # season (which has no completed stats yet, only roster/transaction data).
@@ -1115,9 +1119,51 @@ def build_app() -> gr.Blocks:
         # previously shown — so the tab bar never carries more than the
         # two tabs (Real Agentic Predictor + the one currently picked).
         # Re-selecting "⋯" hides the extra tab again.
+        #
+        # The Real Agentic Predictor model dropdowns live in this same row
+        # (left of the "⋯" selector) rather than inside that tab's own
+        # content — sharing the row's -46px overlap onto the tab-nav line
+        # (see #more-tabs-row below) means they add no extra vertical space
+        # of their own. One top-level default for the whole run, plus one
+        # override per subagent (predictor/did/critic) — the `did` guardrail
+        # is invoked three times per run (pre/during/post-generation) but is
+        # a single subagent definition, so it gets one dropdown, not three.
+        # Each subagent dropdown defaults to "Default" (inherit the Model
+        # dropdown); picking a specific model there overrides just that
+        # subagent via a session-scoped `--agents` flag (see
+        # cli_runner._build_agents_flag) — it never edits the checked-in
+        # .claude/agents/*.md files.
         with gr.Row(elem_id="more-tabs-row"):
             with gr.Column(scale=10):
-                pass
+                with gr.Row():
+                    agent_model = gr.Dropdown(
+                        choices=MODEL_CHOICES,
+                        value=DEFAULT_MODEL,
+                        show_label=False,
+                        container=False,
+                        min_width=110,
+                    )
+                    agent_predictor_model = gr.Dropdown(
+                        choices=_subagent_model_choices("Predictor"),
+                        value="",
+                        show_label=False,
+                        container=False,
+                        min_width=120,
+                    )
+                    agent_did_model = gr.Dropdown(
+                        choices=_subagent_model_choices("DiD"),
+                        value="",
+                        show_label=False,
+                        container=False,
+                        min_width=110,
+                    )
+                    agent_critic_model = gr.Dropdown(
+                        choices=_subagent_model_choices("Critic"),
+                        value="",
+                        show_label=False,
+                        container=False,
+                        min_width=110,
+                    )
             with gr.Column(scale=2, min_width=170):
                 more_tabs_selector = gr.Dropdown(
                     choices=[
@@ -1256,40 +1302,6 @@ def build_app() -> gr.Blocks:
                     '<span class="trace-tag trace-tag-process">final result</span>.',
                     elem_classes=["tab-intro", "workflow-line"],
                 )
-                # Model selection: one top-level default for the whole run,
-                # plus one override per subagent (predictor/did/critic) — the
-                # `did` guardrail is invoked three times per run (pre/during/
-                # post-generation) but is a single subagent definition, so it
-                # gets one dropdown, not three. Each subagent dropdown defaults
-                # to "(default)" (inherit the Model dropdown); picking a
-                # specific model there overrides just that subagent via a
-                # session-scoped `--agents` flag (see cli_runner._build_agents_flag)
-                # — it never edits the checked-in .claude/agents/*.md files.
-                with gr.Row(elem_classes=["tab-intro"]):
-                    agent_model = gr.Dropdown(
-                        choices=MODEL_CHOICES,
-                        value=DEFAULT_MODEL,
-                        label="Model (default for all agents)",
-                        min_width=160,
-                    )
-                    agent_predictor_model = gr.Dropdown(
-                        choices=SUBAGENT_MODEL_CHOICES,
-                        value="",
-                        label="Predictor model",
-                        min_width=140,
-                    )
-                    agent_did_model = gr.Dropdown(
-                        choices=SUBAGENT_MODEL_CHOICES,
-                        value="",
-                        label="DiD guardrail model",
-                        min_width=140,
-                    )
-                    agent_critic_model = gr.Dropdown(
-                        choices=SUBAGENT_MODEL_CHOICES,
-                        value="",
-                        label="Critic model",
-                        min_width=140,
-                    )
                 with gr.Row():
                     with gr.Column(scale=1):
                         agent_mode = gr.Radio(
