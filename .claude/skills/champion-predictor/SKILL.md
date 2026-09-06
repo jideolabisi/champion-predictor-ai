@@ -19,7 +19,12 @@ one number.
 
 ## Steps
 
-0. **Integrity check.** Run:
+0. **Integrity check.** First, delete any stale trace from a previous run:
+   `outputs/.trace/predictor_latest.json` if it exists (the capture hook now
+   *appends* to this file across regeneration rounds within one run — see
+   `scripts/hooks/capture_predictor_trace.py` — so a leftover file from an
+   earlier, unrelated run would otherwise silently leak into this run's
+   guardrail evidence). Then run:
    ```
    .venv/Scripts/python.exe scripts/verify_data_integrity.py --verify
    ```
@@ -45,6 +50,31 @@ one number.
    and target team. Capture its fenced JSON output as `prediction`. (The
    `SubagentStop` hook fires automatically here and writes
    `outputs/.trace/predictor_latest.json`.)
+
+3.5. **Deterministic coaching/management claim check.** Run this after
+   *every* Predict/re-Predict invocation (initial and any regeneration
+   round), not just the first. Write `prediction` to a temp JSON file and
+   run:
+   ```
+   .venv/Scripts/python.exe scripts/verify_coaching_claims.py --prediction <temp-file>
+   ```
+   (defaults `--trace` to `outputs/.trace/predictor_latest.json`). This is a
+   mechanical check, not an LLM judgment call — see
+   `project-predictor-fabrication-incident` in memory for why: the
+   predictor has repeatedly invented specific real coaching/GM/front-office
+   names and mislabeled them as tool-confirmed, surviving three independent
+   runs including one immediately after `predictor.md` was patched with an
+   explicit prose ban on exactly this. Prose-only guardrails alone are not
+   sufficient for this failure class.
+   - `verdict: "fail"` → this is a **confirmed fabrication, not a
+     suspicion signal** — escalate to HITL immediately regardless of the
+     regeneration counter, same as a DiD `suspicion_score >= 80` in step 4.
+     Show the user `unverified_claims` verbatim. Do not let step 4's DiD
+     judgment override or soften this verdict; do not spend a regeneration
+     round on it without the user's explicit go-ahead first.
+   - `verdict: "unchecked"` (trace file missing/empty) → note the reduced
+     coverage and proceed to step 4 as normal.
+   - `verdict: "pass"` → proceed to step 4 as normal.
 
 4. **During-generation guardrail.** Read `outputs/.trace/predictor_latest.json`
    **yourself**. If it's small enough, paste it in full. If it's too large

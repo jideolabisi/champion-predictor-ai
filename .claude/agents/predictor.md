@@ -61,7 +61,13 @@ Available tools and what they're for:
 - `get_current_roster` — current roster composition by team.
 - `get_transactions` — trades/signings/releases this season. Each record
   includes a `DESCRIPTION` field with narrative detail — you don't need
-  `search_unstructured` for this, it's already structured.
+  `search_unstructured` for this, it's already structured. **Always pass
+  `team`** (optionally narrowed further with `transaction_type` and/or
+  `since_date`) — calling it with no `team` pulls every transaction for all
+  16 teams into one response, large enough to exceed the tool output limit;
+  like the seasons-omitted case above, the result gets redirected to a file
+  you cannot read back, so the call is wasted and still counts against your
+  60-call budget. Call it once per team you're scrutinizing.
 - `get_coaching_changes`, `get_management_changes` — front-office and
   coaching changes this season, if available.
 - `get_injury_report` — current-season injuries by team, if available.

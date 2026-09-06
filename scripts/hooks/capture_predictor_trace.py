@@ -57,7 +57,17 @@ import time
 
 TRACE_DIR = os.path.join("outputs", ".trace")
 TRACE_PATH = os.path.join(TRACE_DIR, "predictor_latest.json")
-MAX_TEXT_CHARS = 4000  # per block, so one huge tool result can't blow up the trace file
+# Per block, so one huge tool result can't blow up the trace file. Must
+# comfortably exceed a single properly-scoped team's roster/transactions
+# call (~19.5KB / ~16.2KB respectively, measured against the real 2026
+# data) — the old 4000-char cap silently cut real, correctly-retrieved
+# facts (e.g. a mid-list roster/transaction entry) out of the persisted
+# trace, which then made both the `did` guardrail's groundedness check and
+# scripts/verify_coaching_claims.py's grounding check misreport genuine
+# facts as unverified. 24000 stays well below the MCP tool's own overflow
+# threshold (an unscoped, all-16-teams call hit ~176K chars) while covering
+# any single-team call in full.
+MAX_TEXT_CHARS = 24000
 READ_RETRIES = 5
 READ_RETRY_DELAY_SECONDS = 0.3
 
@@ -142,12 +152,52 @@ def build_trace(session_transcript_path: str, agent_id: str) -> dict:
     return {"tool_calls": tool_calls, "reasoning_text": reasoning_text}
 
 
+def _merge_with_existing(trace: dict) -> dict:
+    """Append this subagent's tool_calls/reasoning_text onto whatever is
+    already in TRACE_PATH, rather than overwriting it.
+
+    Why: SKILL.md's regeneration flow re-invokes the `predictor` subagent
+    (a fresh Task/Agent call, per [[feedback_predictor_reinvoke_fresh_agent]])
+    and goes "back to step 4" to re-run the guardrail on the revised output.
+    A regeneration round often makes zero new tool calls — it's a pure text
+    revision incorporating reviewer feedback — so this hook would otherwise
+    replace the rich evidence trail from the round that actually retrieved
+    the data with an empty one, leaving `did` (and
+    scripts/verify_coaching_claims.py) nothing to check the revised
+    explanation against on the second pass. Confirmed empirically
+    (2026-09-05): a regeneration round's own isolated transcript had 0 tool
+    calls, and the prior round's full trace was gone.
+
+    This assumes the orchestrator clears/renames TRACE_PATH at the start of
+    a genuinely new run (see SKILL.md step 0) — within one run, accumulating
+    across predictor invocations (initial + any regenerations) is exactly
+    the evidence set the guardrails need to see.
+    """
+    if not os.path.exists(TRACE_PATH):
+        return trace
+    try:
+        with open(TRACE_PATH, encoding="utf-8") as f:
+            existing = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return trace
+    if not isinstance(existing, dict):
+        return trace
+    merged_tool_calls = (existing.get("tool_calls") or []) + trace.get("tool_calls", [])
+    merged_reasoning = (existing.get("reasoning_text") or []) + trace.get("reasoning_text", [])
+    merged = {"tool_calls": merged_tool_calls, "reasoning_text": merged_reasoning}
+    for key in ("note", "error"):
+        if trace.get(key):
+            merged[key] = trace[key]
+    return merged
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
         transcript_path = payload.get("transcript_path", "")
         agent_id = payload.get("agent_id", "") or payload.get("agentId", "")
         trace = build_trace(transcript_path, agent_id)
+        trace = _merge_with_existing(trace)
 
         os.makedirs(TRACE_DIR, exist_ok=True)
         with open(TRACE_PATH, "w", encoding="utf-8") as f:

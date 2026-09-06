@@ -91,7 +91,7 @@ CUSTOM_CSS = """
     font-size: 14px;
 }
 .trace-box {
-    max-height: 360px;
+    max-height: 640px;
     overflow-y: auto;
     background: #0f172a !important;
     border-radius: 8px;
