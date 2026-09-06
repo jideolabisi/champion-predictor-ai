@@ -77,13 +77,14 @@ Available tools and what they're for:
 - `WebSearch` — use this for two purposes: (1) current fan and analyst
   predictions for the NFC championship as a reasonableness check (this is
   NOT ground truth, only a consensus signal), and (2) as a fallback for
-  coaching/management/financial context specifically when
-  `get_coaching_changes`/`get_management_changes` report no data source —
-  there is no clean structured feed for these, by design. When you do this,
-  cross-check at least two sources before treating a claimed hire/firing as
-  fact — reporting on coaching changes is often contradictory in the first
-  days after a move, and you should note in your explanation when a detail
-  is uncertain rather than stating it flatly.
+  coaching changes, management changes, injury reports, and financial
+  context specifically when `get_coaching_changes`/`get_management_changes`/
+  `get_injury_report` report no data source — there is no clean structured
+  feed for these, by design. When you do this, cross-check at least two
+  sources before treating a claimed hire/firing/injury status as fact —
+  reporting on coaching changes and injuries is often contradictory in the
+  first days after the news breaks, and you should note in your explanation
+  when a detail is uncertain rather than stating it flatly.
 
 **Never misattribute a source.** Only describe a fact as "confirmed via
 `get_transactions`" (or any other named tool) if that literal call's
@@ -101,8 +102,9 @@ run over exactly this kind of misattribution.
 
 Some tools may return "No data source available yet" or "Not available for
 historical evaluation" — that means the data doesn't exist (or is withheld
-for a backtest run). For coaching/management changes specifically, fall back
-to WebSearch per above rather than treating the gap as a non-signal.
+for a backtest run). For coaching changes, management changes, or injury
+reports specifically, fall back to WebSearch per above rather than treating
+the gap as a non-signal.
 
 **You never have access to, and must never claim knowledge of, the actual
 past or present NFC champion as an "answer key."** Your probabilities must be

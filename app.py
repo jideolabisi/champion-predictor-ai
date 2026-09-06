@@ -45,11 +45,21 @@ from ui.prediction_service import (
     load_prediction_file,
 )
 from ui.cli_runner import (
+    AVAILABLE_MODELS,
     DEFAULT_MAX_BUDGET_USD,
+    DEFAULT_MODEL,
     TRACE_DIVIDER_SENTINEL,
     resume_real_predictor_stream,
     run_real_predictor_stream,
 )
+
+# Model dropdown choices for the Real Agentic Predictor tab: the top-level
+# "Model" dropdown uses MODEL_CHOICES (always a concrete model); the
+# per-subagent dropdowns use SUBAGENT_MODEL_CHOICES, which prepend a
+# "(default)" option (empty string) meaning "inherit the top-level Model"
+# rather than forcing a redundant explicit choice for every subagent.
+MODEL_CHOICES = [(m.capitalize(), m) for m in AVAILABLE_MODELS]
+SUBAGENT_MODEL_CHOICES = [("(default)", "")] + MODEL_CHOICES
 
 # Season choices span the historical dataset plus the current forward-looking
 # season (which has no completed stats yet, only roster/transaction data).
@@ -90,13 +100,27 @@ CUSTOM_CSS = """
 .workflow-line .trace-tag {
     font-size: 14px;
 }
+/* Outer "dark background" layer — was the same 640px box as the scrolling
+   text area below, which is what let a tall trace visually run past the
+   dark panel into whatever sits underneath it. This layer's job now is
+   just to own the background/border and hard-clip its child; the actual
+   scrolling happens one level in, on .trace-box-inner. Reduced 25% from
+   the old shared 640px height (640 * 0.75 = 480). */
 .trace-box {
-    max-height: 640px;
-    overflow-y: auto;
+    max-height: 480px;
+    overflow: hidden;
     background: #0f172a !important;
     border-radius: 8px;
     border: 1px solid #334155 !important;
     padding: 10px 16px !important;
+}
+/* Inner "trace textbox" layer — the actual scrollable log content, kept
+   shorter than the outer panel (30% below the old 640px baseline, i.e.
+   640 * 0.7 = 448) so it never touches the outer edge and can't overlap
+   neighboring UI even if content overflows. */
+.trace-box-inner {
+    max-height: 448px;
+    overflow-y: auto;
     /* Reserve space for the scrollbar instead of letting it overlay the
        text column — on a narrow trace-box that overlay made the thumb
        visually sit on top of the last few characters of each line. */
@@ -104,13 +128,13 @@ CUSTOM_CSS = """
     scrollbar-width: thin;
     scrollbar-color: #475569 #0f172a;
 }
-.trace-box::-webkit-scrollbar {
+.trace-box-inner::-webkit-scrollbar {
     width: 11px;
 }
-.trace-box::-webkit-scrollbar-track {
+.trace-box-inner::-webkit-scrollbar-track {
     background: #0f172a;
 }
-.trace-box::-webkit-scrollbar-thumb {
+.trace-box-inner::-webkit-scrollbar-thumb {
     background-color: #475569;
     border-radius: 6px;
     border: 2px solid #0f172a;
@@ -122,7 +146,7 @@ CUSTOM_CSS = """
     line-height: 1.5;
     color: #cbd5e1 !important;
 }
-.trace-box {
+.trace-box-inner {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
 }
@@ -155,6 +179,7 @@ CUSTOM_CSS = """
 .trace-tag-validate { color: #166534 !important; background: #dcfce7; }
 .trace-tag-did-post { color: #9f1239 !important; background: #ffe4e6; }
 .trace-tag-process { color: #334155 !important; background: #e2e8f0; }
+.trace-tag-workflow { color: #0e7490 !important; background: #cffafe; }
 .trace-tag-default { color: #475569 !important; background: #f1f5f9; }
 /* Targets the tab-bar button by its stable data-tab-id (set via
    TabItem(id=...)) rather than elem_classes — elem_classes on a TabItem
@@ -242,7 +267,7 @@ button[data-tab-id="tab_real_agent"] {
 # it re-runs after every streamed chunk lands in the DOM.
 SCROLL_TRACE_JS = """
 () => {
-    document.querySelectorAll('.trace-box, .trace-box *').forEach((el) => {
+    document.querySelectorAll('.trace-box-inner').forEach((el) => {
         if (el.scrollHeight > el.clientHeight + 2) {
             el.scrollTop = el.scrollHeight;
         }
@@ -322,7 +347,7 @@ _TRACE_TAG_CLASSES = {
     "critic.Critique": "trace-tag-critic",
     "Process.Validate": "trace-tag-validate",
     "DiD.Post-Gen": "trace-tag-did-post",
-    "Process.Verify": "trace-tag-process",
+    "Workflow.Harness-skill": "trace-tag-workflow",
     "Process.Finalize": "trace-tag-process",
     "DiD.Summary": "trace-tag-did-post",
 }
@@ -358,7 +383,7 @@ def _format_trace_markdown(raw_text: str) -> str:
         lambda m: f'<span class="trace-tag {_TRACE_TAG_CLASSES.get(m.group(1), "trace-tag-default")}">@{m.group(1)}</span>',
         escaped,
     )
-    return escaped
+    return f'<div class="trace-box-inner">{escaped}</div>'
 
 
 def _render_log(log_lines: list[str]) -> str:
@@ -614,12 +639,21 @@ def run_real_predictor_ui(
     scenario_text: str,
     max_budget: float,
     confirmed: bool,
+    model: str,
+    predictor_model: str,
+    did_model: str,
+    critic_model: str,
 ):
     """Stream a real Claude Code run of the champion-predictor skill (the
     actual predictor/critic/did subagents, MCP tools, and hooks) and render
     its output as it completes. Unlike the other tabs, this is a genuine
     multi-minute agentic run, not a local heuristic — gated behind an
     explicit confirmation checkbox and a hard per-run budget cap.
+
+    `model` is the run's default (`--model`); `predictor_model`/`did_model`/
+    `critic_model` are per-subagent overrides ("" means inherit `model`) —
+    see run_real_predictor_stream's `subagent_models` for how these become a
+    session-scoped `--agents` flag.
 
     Outputs (12): agent_log, agent_report_md, agent_prob_md, agent_prob_table,
     agent_chart, agent_audit_md, agent_status, agent_run_btn,
@@ -668,6 +702,8 @@ def run_real_predictor_ui(
             target_team=target_team if mode == "what_if" else None,
             scenario=scenario_text if mode == "what_if" else None,
             max_budget_usd=float(max_budget),
+            model=model,
+            subagent_models={"predictor": predictor_model, "did": did_model, "critic": critic_model},
         ):
             if event["type"] == "log":
                 log_lines.append(event["text"])
@@ -1220,6 +1256,40 @@ def build_app() -> gr.Blocks:
                     '<span class="trace-tag trace-tag-process">final result</span>.',
                     elem_classes=["tab-intro", "workflow-line"],
                 )
+                # Model selection: one top-level default for the whole run,
+                # plus one override per subagent (predictor/did/critic) — the
+                # `did` guardrail is invoked three times per run (pre/during/
+                # post-generation) but is a single subagent definition, so it
+                # gets one dropdown, not three. Each subagent dropdown defaults
+                # to "(default)" (inherit the Model dropdown); picking a
+                # specific model there overrides just that subagent via a
+                # session-scoped `--agents` flag (see cli_runner._build_agents_flag)
+                # — it never edits the checked-in .claude/agents/*.md files.
+                with gr.Row(elem_classes=["tab-intro"]):
+                    agent_model = gr.Dropdown(
+                        choices=MODEL_CHOICES,
+                        value=DEFAULT_MODEL,
+                        label="Model (default for all agents)",
+                        min_width=160,
+                    )
+                    agent_predictor_model = gr.Dropdown(
+                        choices=SUBAGENT_MODEL_CHOICES,
+                        value="",
+                        label="Predictor model",
+                        min_width=140,
+                    )
+                    agent_did_model = gr.Dropdown(
+                        choices=SUBAGENT_MODEL_CHOICES,
+                        value="",
+                        label="DiD guardrail model",
+                        min_width=140,
+                    )
+                    agent_critic_model = gr.Dropdown(
+                        choices=SUBAGENT_MODEL_CHOICES,
+                        value="",
+                        label="Critic model",
+                        min_width=140,
+                    )
                 with gr.Row():
                     with gr.Column(scale=1):
                         agent_mode = gr.Radio(
@@ -1316,7 +1386,10 @@ def build_app() -> gr.Blocks:
                 ]
                 agent_run_btn.click(
                     fn=run_real_predictor_ui,
-                    inputs=[agent_mode, agent_season, agent_team, agent_scenario, agent_budget, agent_confirm],
+                    inputs=[
+                        agent_mode, agent_season, agent_team, agent_scenario, agent_budget, agent_confirm,
+                        agent_model, agent_predictor_model, agent_did_model, agent_critic_model,
+                    ],
                     outputs=agent_run_outputs,
                 )
                 agent_run_btn.click(fn=None, js=START_CLOCK_JS, inputs=None, outputs=None)

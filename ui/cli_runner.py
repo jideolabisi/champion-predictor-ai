@@ -20,11 +20,26 @@ import uuid
 from pathlib import Path
 from typing import Any, Iterator
 
+import yaml
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PREDICTIONS_DIR = REPO_ROOT / "outputs" / "predictions"
+AGENTS_DIR = REPO_ROOT / ".claude" / "agents"
 
 DEFAULT_MAX_BUDGET_USD = 5.0
 DEFAULT_TIMEOUT_SECONDS = 900
+
+# CLI --model aliases, confirmed via `claude --help`. Used both as the
+# top-level/default model for a run and as the option set for a per-subagent
+# override (see _build_agents_flag below).
+AVAILABLE_MODELS = ["sonnet", "opus", "haiku", "fable"]
+DEFAULT_MODEL = "sonnet"
+
+# The subagents champion-predictor.md's pipeline invokes by name — the same
+# three names as their .claude/agents/<name>.md files. `did` is invoked three
+# times per run (pre/during/post-generation) but is one subagent definition,
+# so it gets one model choice, not three.
+SUBAGENT_NAMES = ["predictor", "did", "critic"]
 
 # Tools the champion-predictor skill's control flow actually needs: Task (to
 # invoke the predictor/critic/did subagents), Read/Write (steps 3, 7, 9 —
@@ -75,6 +90,39 @@ def find_claude_cli() -> str:
     )
 
 
+def _parse_subagent_frontmatter(name: str) -> dict[str, Any]:
+    """Read `.claude/agents/<name>.md` into the shape the `--agents` CLI flag
+    expects (description/tools/prompt) — generated from the real file on
+    every call rather than hand-duplicated, so a model override built from it
+    can never drift out of sync with the checked-in subagent definition.
+    """
+    text = (AGENTS_DIR / f"{name}.md").read_text(encoding="utf-8")
+    _, frontmatter, body = text.split("---", 2)
+    meta = yaml.safe_load(frontmatter) or {}
+    tools = meta.get("tools") or []
+    # predictor.md's `tools:` is a plain comma-separated scalar (not YAML
+    # list syntax), unlike did.md/critic.md's `tools: []` — normalize both
+    # to the array form --agents expects.
+    if isinstance(tools, str):
+        tools = [t.strip() for t in tools.split(",") if t.strip()]
+    return {"description": meta.get("description", ""), "tools": tools, "prompt": body.strip()}
+
+
+def _build_agents_flag(subagent_models: dict[str, str] | None) -> str | None:
+    """Build the `--agents` CLI JSON value overriding just the `model` field
+    of specific subagents for this one run. Per Claude Code's own precedence
+    rules, a `--agents` entry with the same name as a `.claude/agents/*.md`
+    file takes over for that session only — the checked-in file is never
+    touched, so concurrent runs with different per-subagent model choices
+    don't step on each other. Returns None (omit the flag entirely) when
+    every subagent is left on the run's default model.
+    """
+    overrides = {name: model for name, model in (subagent_models or {}).items() if model}
+    if not overrides:
+        return None
+    return json.dumps({name: {**_parse_subagent_frontmatter(name), "model": model} for name, model in overrides.items()})
+
+
 def _build_prompt(mode: str, season: int, target_team: str | None, scenario: str | None) -> str:
     # Deliberately more specific than a bare "predict the championship" —
     # the DiD pre-generation guardrail scores request completeness/fit-to-
@@ -86,8 +134,10 @@ def _build_prompt(mode: str, season: int, target_team: str | None, scenario: str
     grounding = (
         "grounded only in data retrieved via the provided tools (seasonal "
         "stats, roster, transactions, coaching/management changes, "
-        "injuries) plus the WebSearch consensus check — not prior/"
-        "pretrained knowledge of team strength or standings"
+        "injuries) plus the WebSearch consensus check (covering coaching "
+        "changes, management changes, and injury reports in addition to "
+        "the win-probability sentiment check) — not prior/pretrained "
+        "knowledge of team strength or standings"
     )
     if mode == "what_if":
         return (
@@ -273,7 +323,7 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
                                 elif "validate_predictions" in bash_cmd:
                                     current_phase = ("Process", "Validate")
                                 elif not parent_id:
-                                    current_phase = ("Process", "Verify")
+                                    current_phase = ("Workflow", "Harness-skill")
                             elif name == "Write" and not parent_id:
                                 current_phase = ("Process", "Finalize")
                             elif not parent_id:
@@ -290,7 +340,7 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
                                 # `tools: []` forbids it. Tag these
                                 # distinctly so the trace never looks like a
                                 # guardrail violated its own restriction.
-                                current_phase = ("Process", "Verify")
+                                current_phase = ("Workflow", "Harness-skill")
                             if current_phase != last_divider_phase and last_divider_phase is not None:
                                 yield {"type": "log", "text": TRACE_DIVIDER_SENTINEL}
                             last_divider_phase = current_phase
@@ -314,6 +364,21 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
                         continue
                     summary = content if len(content) <= 300 else content[:300] + "...[truncated]"
                     yield {"type": "log", "text": _bulletize(f"Observation: {summary}", current_phase)}
+                    # This tool_result's tool_use_id matches a pending Task/
+                    # Agent call (recorded in task_labels when the Action was
+                    # emitted, keyed by that call's own id) exactly when it's
+                    # the subagent's *finished* answer coming back to the
+                    # orchestrator. Once consumed, current_phase must revert
+                    # to the orchestrator's own default — otherwise the
+                    # orchestrator's next freeform Thought (no tool_use of its
+                    # own yet, so nothing else would update current_phase)
+                    # keeps showing the subagent's tag (e.g. "@DiD.During-Gen")
+                    # even though it's the orchestrator reasoning about that
+                    # subagent's output, not the subagent itself.
+                    tool_use_id = block.get("tool_use_id")
+                    if tool_use_id in task_labels:
+                        del task_labels[tool_use_id]
+                        current_phase = ("Workflow", "Harness-skill")
             elif etype == "result":
                 result_event = obj
 
@@ -390,9 +455,18 @@ def run_real_predictor_stream(
     scenario: str | None = None,
     max_budget_usd: float = DEFAULT_MAX_BUDGET_USD,
     timeout_seconds: int = DEFAULT_TIMEOUT_SECONDS,
+    model: str = DEFAULT_MODEL,
+    subagent_models: dict[str, str] | None = None,
 ) -> Iterator[dict[str, Any]]:
     """Run the real predictor pipeline via headless Claude Code, yielding
     `{"type": "log", "text": ...}` progress events as they stream in.
+
+    `model` sets the top-level/orchestrator model for the whole run (a
+    `--model` alias — see AVAILABLE_MODELS). `subagent_models` optionally
+    pins specific subagents (keys from SUBAGENT_NAMES, e.g. `{"predictor":
+    "opus"}`) to a different model than the run default, via a session-scoped
+    `--agents` override (see _build_agents_flag) — any subagent left out (or
+    mapped to a falsy value) just inherits `model`.
 
     The final event has `"type": "done"` and carries:
     - `ok`: whether the run completed successfully
@@ -428,7 +502,11 @@ def run_real_predictor_stream(
         "--allowedTools", *ALLOWED_TOOLS,
         "--forward-subagent-text",
         "--max-budget-usd", str(max_budget_usd),
+        "--model", model,
     ]
+    agents_flag = _build_agents_flag(subagent_models)
+    if agents_flag is not None:
+        cmd += ["--agents", agents_flag]
     # Deliberately no --no-session-persistence: that flag stops Claude Code
     # from writing a transcript file at all, which breaks the SubagentStop
     # hook (capture_predictor_trace.py) that the `did` guardrail depends on
