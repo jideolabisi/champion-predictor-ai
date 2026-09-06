@@ -14,6 +14,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 import shutil
 import subprocess
 import uuid
@@ -173,11 +174,25 @@ def _newest_new_report_stem(before: set[str]) -> str | None:
 # steps run strictly sequentially in this ReAct architecture — never
 # concurrently — so "whatever tool_use most recently declared a phase" is
 # always the right phase for every line until the next one declares another.
-_PHASE_MARKERS = (
-    ("pre-generation", ("DiD", "Pre-Gen")),
-    ("during-generation", ("DiD", "During-Gen")),
-    ("post-generation", ("DiD", "Post-Gen")),
-)
+# SKILL.md's steps 2/4/8 each tell the orchestrator to write a literal
+# "MODE: <phase>-generation" line into the did subagent's prompt — but step
+# 8 also tells it to reuse step 4's targeted-extraction approach, so the
+# post-generation prompt's free text very plausibly narrates "step 4"/"the
+# during-generation check" for did's own context (did has no memory of
+# earlier calls). A bare `"during-generation" in blob` substring check, as
+# used to have here, matches that incidental prose and wins over the actual
+# "MODE: post-generation" directive later in the same blob, since the old
+# code returned on the first of the three needles found in a fixed
+# pre/during/post scan order — regardless of which one was the real
+# directive. Anchoring on the "MODE:" prefix and taking the *last* such
+# directive (there should only be one, but the last is the one that governs
+# if a prompt ever narrates more than one) avoids that false match.
+_MODE_DIRECTIVE_RE = re.compile(r"mode:\s*(pre|during|post)-generation")
+_MODE_DIRECTIVE_PHASE = {
+    "pre": ("DiD", "Pre-Gen"),
+    "during": ("DiD", "During-Gen"),
+    "post": ("DiD", "Post-Gen"),
+}
 
 # A visual divider ("horizontal rule") is inserted into the log just before
 # the first line of a new phase, so a transition from one agent/activity to
@@ -195,9 +210,9 @@ def _detect_task_phase(label: str, tool_input: dict, prior_did_calls: int, mode_
         return ("critic", "Critique")
     if label == "did":
         blob = json.dumps(tool_input).lower()
-        for needle, phase in _PHASE_MARKERS:
-            if needle in blob:
-                return phase
+        directive_matches = _MODE_DIRECTIVE_RE.findall(blob)
+        if directive_matches:
+            return _MODE_DIRECTIVE_PHASE[directive_matches[-1]]
         # SKILL.md step 2/4/8 has the orchestrator put a literal "MODE:
         # pre-generation"/etc. line in the did subagent's prompt — if that
         # text isn't found verbatim (e.g. a skill-prompt wording change),

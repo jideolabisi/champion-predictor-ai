@@ -94,6 +94,21 @@ _NAME_RE = re.compile(
     r"\b[A-Z][a-z'\.\-]+(?:\s+[A-Z][a-z'\.\-]+){1,2}\b"
 )
 
+# A trailing possessive ("Green Bay's", "Sean McVay's") is part of the
+# same Title-Case span _NAME_RE matches, so it must be stripped before
+# comparing against team stopwords or the grounded corpus — otherwise
+# "Green Bay's" survives the "Green Bay" stopword check (it's a
+# different string) and then fails corpus verification too, since
+# _normalize only strips the apostrophe, not the trailing "s"
+# ("Green Bay's" -> "green bays", which never appears in a corpus that
+# only has "Green Bay"). This affects any possessive name, not just
+# team names.
+_POSSESSIVE_SUFFIX_RE = re.compile(r"['’]s\b")
+
+
+def _strip_possessive(name: str) -> str:
+    return _POSSESSIVE_SUFFIX_RE.sub("", name)
+
 _SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
 
 # Team full names and their component city/nickname bigrams — these are
@@ -143,11 +158,12 @@ def _candidate_names(sentences: list[str]) -> list[str]:
     candidates = []
     for sentence in sentences:
         for match in _NAME_RE.findall(sentence):
-            if match in _TEAM_STOPWORDS or match in _EXTRA_STOPWORDS:
+            name = _strip_possessive(match)
+            if name in _TEAM_STOPWORDS or name in _EXTRA_STOPWORDS:
                 continue
-            if match not in seen:
-                seen.add(match)
-                candidates.append(match)
+            if name not in seen:
+                seen.add(name)
+                candidates.append(name)
     return candidates
 
 

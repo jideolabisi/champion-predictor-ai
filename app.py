@@ -119,11 +119,12 @@ CUSTOM_CSS = """
     padding: 10px 16px !important;
 }
 /* Inner "trace textbox" layer — the actual scrollable log content, kept
-   shorter than the outer panel (30% below the old 640px baseline, i.e.
-   640 * 0.7 = 448) so it never touches the outer edge and can't overlap
-   neighboring UI even if content overflows. */
+   shorter than the outer panel so it never touches the outer edge and
+   can't overlap neighboring UI even if content overflows. 448px (640 *
+   0.7) still overlapped the outer .trace-box's 480px in practice, so
+   this drops further to 420px for a visibly clear margin. */
 .trace-box-inner {
-    max-height: 448px;
+    max-height: 420px;
     overflow-y: auto;
     /* Reserve space for the scrollbar instead of letting it overlay the
        text column — on a narrow trace-box that overlay made the thumb
