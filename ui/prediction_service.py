@@ -494,14 +494,30 @@ def format_prediction_markdown(
     return "\n".join(lines)
 
 
+def _stem_mtime(stem: str) -> float:
+    """Newest mtime across a report stem's `.md`/`.json` pair (0.0 if neither
+    is readable), so the two files a report is written as always sort as one
+    item."""
+    times = [
+        path.stat().st_mtime
+        for path in (OUTPUT_DIR / f"{stem}.md", OUTPUT_DIR / f"{stem}.json")
+        if path.exists()
+    ]
+    return max(times) if times else 0.0
+
+
 def list_saved_predictions() -> list[dict[str, Any]]:
     """List all saved predictions in outputs/predictions/."""
     if not OUTPUT_DIR.exists():
         return []
 
     files = [f for f in OUTPUT_DIR.iterdir() if f.is_file() and (f.suffix == ".md" or f.suffix == ".json")]
-    # Group by base name
-    base_names = sorted(list({f.stem for f in files}), reverse=True)
+    # Group by base name. Ordered newest-first by modification time, not by
+    # stem: the stems carry two different prefixes ("prediction_..." and
+    # "whatif_..."), so a reverse *name* sort grouped every what-if report
+    # above every prediction regardless of age, and the run you just finished
+    # could land halfway down the list.
+    base_names = sorted({f.stem for f in files}, key=_stem_mtime, reverse=True)
 
     items = []
     for stem in base_names:

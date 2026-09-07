@@ -251,7 +251,7 @@ button[data-tab-id="tab_real_agent"] {
     color: #78350f !important;
     font-weight: 600;
 }
-/* Pulls the "⋯ more tabs" dropdown row up so it sits on the same visual
+/* Pulls the tab-selector/model dropdown row up so it sits on the same visual
    line as the tab strip immediately below it, instead of taking its own
    full row — reclaims that row's height. */
 #more-tabs-row {
@@ -445,6 +445,53 @@ def _build_whatif_table(probs: dict[str, float], adj_probs: dict[str, float], ta
     return pd.DataFrame(rows, columns=["Rank", "Code", "Team Name", "Baseline", "Scenario Odds", "Net Shift", "Status"])
 
 
+_ROUND_KEY_RE = re.compile(r"^round[_ ]?(\d+)$", re.IGNORECASE)
+
+
+def _final_round(section: Any) -> dict[str, Any]:
+    """Reduce one guardrail section (a `did` phase, or `critic`) to the single
+    round whose verdicts the Guardrails panel should show.
+
+    SKILL.md asks for "the full step-N output, verbatim" per section, which is
+    a flat verdict dict on a run that needed only one predictor round. But a
+    run that regenerates writes the *rounds* instead, and it has used more
+    than one shape to do it — `{"final_round": {...}, "all_rounds": [...]}`
+    and `{"round_1": {...}, "round_2": {...}}` both appear in
+    outputs/predictions/. Reading the flat keys straight off those wrappers
+    found nothing, which is why a real multi-round run rendered as
+    "Overconfidence: ? (Suspicion: ?/100)" while the verdicts sat one level
+    down. Unwrap all three shapes, preferring an explicit `final_round`, then
+    the last entry of `all_rounds`, then the highest-numbered `round_N`.
+    """
+    if not isinstance(section, dict):
+        return {}
+    final = section.get("final_round")
+    if isinstance(final, dict):
+        return final
+    all_rounds = section.get("all_rounds")
+    if isinstance(all_rounds, list) and all_rounds and isinstance(all_rounds[-1], dict):
+        return all_rounds[-1]
+    numbered = [(int(m.group(1)), v) for k, v in section.items() if (m := _ROUND_KEY_RE.match(str(k))) and isinstance(v, dict)]
+    if numbered:
+        return max(numbered, key=lambda pair: pair[0])[1]
+    return section
+
+
+def _round_count(section: Any) -> int:
+    """How many predictor rounds this section recorded verdicts for — 1 for
+    the flat single-round shape. Used only to caption the panel, so a reader
+    knows a shown verdict is the final round's and not the only one."""
+    if not isinstance(section, dict):
+        return 1
+    all_rounds = section.get("all_rounds")
+    if isinstance(all_rounds, list) and all_rounds:
+        return len(all_rounds)
+    numbered = [k for k in section if _ROUND_KEY_RE.match(str(k))]
+    if numbered:
+        return len(numbered)
+    return 1
+
+
 def _build_audit_markdown(
     validation: dict[str, Any],
     did: dict[str, Any],
@@ -452,6 +499,23 @@ def _build_audit_markdown(
     filename: str,
 ) -> str:
     """Guardrails & Verification panel, shared by both tabs."""
+    # Each section may hold one round's verdicts or several — show the final
+    # round's either way (see _final_round).
+    pre = _final_round(did.get("pre_generation"))
+    during = _final_round(did.get("during_generation"))
+    post = _final_round(did.get("post_generation"))
+    critic_final = _final_round(critic)
+    rounds = max(
+        _round_count(did.get("during_generation")),
+        _round_count(did.get("post_generation")),
+        _round_count(critic),
+    )
+    rounds_note = (
+        f"- **Predictor Rounds**: `{rounds}` — the DiD and Critic verdicts above are the final round's\n"
+        if rounds > 1
+        else ""
+    )
+
     integrity = check_integrity()
     if integrity.get("passed"):
         checksum_line = "- **Data Checksum (SHA-256 manifest)**: `PASSED` — all watched files match the baseline\n"
@@ -467,12 +531,13 @@ def _build_audit_markdown(
         f"- **Consensus Variance**: `{validation.get('consensus_variance_check', {}).get('overlap', '?')}/3` "
         f"overlap with Top-3 consensus\n"
         f"{checksum_line}"
-        f"- **DiD Pre-gen Prompt**: `{did.get('pre_generation', {}).get('prompt_score', '?')}/100` "
-        f"(`{did.get('pre_generation', {}).get('verdict', '?')}`)\n"
-        f"- **DiD During-gen Overconfidence**: `{did.get('during_generation', {}).get('overconfidence_verdict', '?')}` "
-        f"(Suspicion: `{did.get('during_generation', {}).get('suspicion_score', '?')}/100`)\n"
-        f"- **DiD Post-gen Groundedness**: `{did.get('post_generation', {}).get('groundedness_verdict', '?')}`\n"
-        f"- **Critic Rating**: `{critic.get('rating', '?')}`\n"
+        f"- **DiD Pre-gen Prompt**: `{pre.get('prompt_score', '?')}/100` "
+        f"(`{pre.get('verdict', '?')}`)\n"
+        f"- **DiD During-gen Overconfidence**: `{during.get('overconfidence_verdict', '?')}` "
+        f"(Suspicion: `{during.get('suspicion_score', '?')}/100`)\n"
+        f"- **DiD Post-gen Groundedness**: `{post.get('groundedness_verdict', '?')}`\n"
+        f"- **Critic Rating**: `{critic_final.get('rating', '?')}`\n"
+        f"{rounds_note}"
         f"- **Report Saved**: `{filename}`"
     )
 
@@ -722,8 +787,16 @@ def run_real_predictor_ui(
             result_event = event.get("result_event") or {}
             cost = result_event.get("total_cost_usd")
             cost_note = f" (cost: ${cost:.4f})" if cost is not None else ""
-            duration_ms = result_event.get("duration_ms")
-            elapsed_seconds = (duration_ms / 1000) if duration_ms is not None else (time.time() - start_time)
+            # Wall clock measured here, deliberately *not* the result event's
+            # own `duration_ms`. The CLI emits more than one `result` event on
+            # a run that used subagents (confirmed empirically: two events,
+            # same cumulative `total_cost_usd` but different `duration_ms`),
+            # and the one that arrives last can report a fraction of the real
+            # elapsed time — a ~69s probe run reported 24s, and a ~19-minute
+            # predictor run reported "1m 50s". Cost is cumulative and still
+            # trustworthy from the result event; duration is not, so it comes
+            # from the same clock the user watches tick in #agent-elapsed-clock.
+            elapsed_seconds = time.time() - start_time
             duration_note = f" (time: {_format_duration(elapsed_seconds)})"
             session_id = event.get("session_id")
 
@@ -838,8 +911,16 @@ def resume_real_predictor_ui(
             result_event = event.get("result_event") or {}
             cost = result_event.get("total_cost_usd")
             cost_note = f" (cost: ${cost:.4f})" if cost is not None else ""
-            duration_ms = result_event.get("duration_ms")
-            elapsed_seconds = (duration_ms / 1000) if duration_ms is not None else (time.time() - start_time)
+            # Wall clock measured here, deliberately *not* the result event's
+            # own `duration_ms`. The CLI emits more than one `result` event on
+            # a run that used subagents (confirmed empirically: two events,
+            # same cumulative `total_cost_usd` but different `duration_ms`),
+            # and the one that arrives last can report a fraction of the real
+            # elapsed time — a ~69s probe run reported 24s, and a ~19-minute
+            # predictor run reported "1m 50s". Cost is cumulative and still
+            # trustworthy from the result event; duration is not, so it comes
+            # from the same clock the user watches tick in #agent-elapsed-clock.
+            elapsed_seconds = time.time() - start_time
             duration_note = f" (time: {_format_duration(elapsed_seconds)})"
             new_session_id = event.get("session_id") or session_id
 
@@ -996,12 +1077,31 @@ def regenerate_manifest_ui(confirmed: bool):
 
 @_handle_errors
 def load_reports_archive_ui():
-    """List saved prediction files."""
+    """List saved prediction files, newest first, with the newest preselected
+    and already rendered — so opening the Audit tab shows the run you just
+    finished instead of an empty panel waiting for a click.
+
+    `list_saved_predictions` returns them in modified-time order; each option
+    is labeled with its timestamp but still carries the bare stem as its
+    value, which is what `view_report_detail_ui` loads by.
+    """
     items = list_saved_predictions()
     if not items:
-        return gr.Dropdown(choices=[]), "No saved reports found in `outputs/predictions/`."
-    choices = [item["stem"] for item in items]
-    return gr.Dropdown(choices=choices, value=choices[0]), f"Found {len(choices)} saved prediction reports."
+        return (
+            gr.Dropdown(choices=[], value=None),
+            "No saved reports found in `outputs/predictions/`.",
+            "### Report Detail\n*No saved reports to view.*",
+            gr.update(),
+        )
+    choices = [(item["title"], item["stem"]) for item in items]
+    newest = items[0]["stem"]
+    detail, chart = view_report_detail_ui(newest)
+    return (
+        gr.Dropdown(choices=choices, value=newest),
+        f"Found {len(choices)} saved prediction reports — newest first.",
+        detail,
+        chart,
+    )
 
 
 @_handle_errors
@@ -1072,6 +1172,12 @@ def view_report_detail_ui(selected_stem: str):
     return md_content, chart
 
 
+# The tab selector's reset option: selecting it hides every optional tab and
+# leaves just the Real Agentic Predictor tab, so it is labeled with that tab's
+# own name. Deliberately absent from _MORE_TAB_MAP below — an unmapped choice
+# is exactly the "show nothing extra" case _select_more_tab already handles.
+REAL_AGENT_TAB_CHOICE = "🤖 Real Agentic Predictor"
+
 _MORE_TAB_MAP = {
     "🧪 Non-Agentic Simulator": "tab_simulator",
     "📊 Data Explorer": "tab_data",
@@ -1082,10 +1188,10 @@ _MORE_TAB_MAP = {
 
 
 def _select_more_tab(choice: str | None):
-    """Reveal exactly the one hidden tab picked from the '⋯' selector
+    """Reveal exactly the one hidden tab picked from the tab selector
     (hiding whichever other one was previously shown) and switch the tab
-    bar to it. Picking '⋯' itself (the reset value) hides all of them and
-    returns to just the Real Agentic Predictor tab."""
+    bar to it. Picking REAL_AGENT_TAB_CHOICE (the reset value) hides all of
+    them and returns to just the Real Agentic Predictor tab."""
     target_id = _MORE_TAB_MAP.get(choice or "")
     return (
         gr.update(visible=(target_id == "tab_simulator")),
@@ -1113,17 +1219,19 @@ def build_app() -> gr.Blocks:
                 """
             )
 
-        # "More tabs" selector — sits just above/right of the tab strip.
-        # Only "Real Agentic Predictor" is a visible tab by default; the
-        # other five stay hidden (visible=False on their TabItem below)
+        # Tab selector — the row's first control, sitting just above the tab
+        # strip. Only "Real Agentic Predictor" is a visible tab by default;
+        # the other five stay hidden (visible=False on their TabItem below)
         # until picked here, and picking one hides whichever was
         # previously shown — so the tab bar never carries more than the
         # two tabs (Real Agentic Predictor + the one currently picked).
-        # Re-selecting "⋯" hides the extra tab again.
+        # Re-selecting REAL_AGENT_TAB_CHOICE hides the extra tab again; it
+        # names the tab it returns you to rather than the old bare "⋯", which
+        # said nothing about what selecting it would do.
         #
-        # The Real Agentic Predictor model dropdowns live in this same row
-        # (left of the "⋯" selector) rather than inside that tab's own
-        # content — sharing the row's -46px overlap onto the tab-nav line
+        # The Real Agentic Predictor model dropdowns share this same row
+        # (right of the tab selector) rather than sitting inside that tab's
+        # own content — the row's -46px overlap onto the tab-nav line
         # (see #more-tabs-row below) means they add no extra vertical space
         # of their own. One top-level default for the whole run, plus one
         # override per subagent (predictor/did/critic) — the `did` guardrail
@@ -1135,7 +1243,22 @@ def build_app() -> gr.Blocks:
         # cli_runner._build_agents_flag) — it never edits the checked-in
         # .claude/agents/*.md files.
         with gr.Row(elem_id="more-tabs-row"):
-            with gr.Column(scale=10):
+            with gr.Column(scale=3, min_width=200):
+                more_tabs_selector = gr.Dropdown(
+                    choices=[
+                        REAL_AGENT_TAB_CHOICE,
+                        "🧪 Non-Agentic Simulator",
+                        "📊 Data Explorer",
+                        "🔍 RAG Search",
+                        "🛡️ Audit",
+                        "🧠 Memory",
+                    ],
+                    value=REAL_AGENT_TAB_CHOICE,
+                    show_label=False,
+                    container=False,
+                    elem_id="more-tabs-selector",
+                )
+            with gr.Column(scale=9):
                 with gr.Row():
                     agent_model = gr.Dropdown(
                         choices=MODEL_CHOICES,
@@ -1165,21 +1288,6 @@ def build_app() -> gr.Blocks:
                         container=False,
                         min_width=110,
                     )
-            with gr.Column(scale=2, min_width=170):
-                more_tabs_selector = gr.Dropdown(
-                    choices=[
-                        "⋯",
-                        "🧪 Non-Agentic Simulator",
-                        "📊 Data Explorer",
-                        "🔍 RAG Search",
-                        "🛡️ Audit",
-                        "🧠 Memory",
-                    ],
-                    value="⋯",
-                    show_label=False,
-                    container=False,
-                    elem_id="more-tabs-selector",
-                )
 
         with gr.Tabs(selected="tab_real_agent", elem_id="main-tabs") as main_tabs:
             # ----------------------------------------------------
@@ -1566,18 +1674,21 @@ def build_app() -> gr.Blocks:
                         gr.Markdown("### 📂 Saved Prediction Reports Archive")
                         reports_refresh_btn = gr.Button("🔄 Refresh Saved Reports List", variant="secondary")
                         reports_dropdown = gr.Dropdown(choices=[], label="Select Prediction Report")
-                        reports_status = gr.Markdown("Click refresh to scan `outputs/predictions/`.")
-
-                        reports_refresh_btn.click(
-                            fn=load_reports_archive_ui,
-                            outputs=[reports_dropdown, reports_status],
-                        )
+                        reports_status = gr.Markdown("Scanning `outputs/predictions/`…")
 
                 with gr.Row():
                     with gr.Column(scale=2):
                         report_content_view = gr.Markdown("### Report Detail\n*Select a report above to view.*")
                     with gr.Column(scale=1):
                         report_chart_view = gr.Plot(label="Report Odds Visualization")
+
+                # Registered here, after the detail panels exist, because the
+                # archive loader now also renders the newest report it finds.
+                # It runs on page load as well as on the refresh button, so
+                # the list arrives already populated and preselected.
+                _archive_outputs = [reports_dropdown, reports_status, report_content_view, report_chart_view]
+                reports_refresh_btn.click(fn=load_reports_archive_ui, outputs=_archive_outputs)
+                demo.load(fn=load_reports_archive_ui, outputs=_archive_outputs)
 
                 reports_dropdown.change(
                     fn=view_report_detail_ui,

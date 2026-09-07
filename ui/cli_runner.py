@@ -169,11 +169,11 @@ def _newest_new_report_stem(before: set[str]) -> str | None:
 
 # Maps the live event stream onto SKILL.md's fixed 9-step control flow so the
 # UI's trace log can tag every line with which step produced it (e.g.
-# "@DiD.Pre-Gen"), not just which subagent. `current_phase` below is a
-# single (agent, activity) pair rather than a per-subagent map because the
-# steps run strictly sequentially in this ReAct architecture — never
-# concurrently — so "whatever tool_use most recently declared a phase" is
-# always the right phase for every line until the next one declares another.
+# "@DiD.Pre-Gen"), not just which subagent. Each launched subagent's phase is
+# recorded against the id of the tool_use that launched it, and every line is
+# tagged from its own `parent_tool_use_id` (see `_stream_and_parse`) — not
+# from a single "phase of the moment" variable, which mislabeled a subagent's
+# lines as the orchestrator's whenever anything moved it mid-subagent.
 # SKILL.md's steps 2/4/8 each tell the orchestrator to write a literal
 # "MODE: <phase>-generation" line into the did subagent's prompt — but step
 # 8 also tells it to reuse step 4's targeted-extraction approach, so the
@@ -250,14 +250,41 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
     event: `result_event` (the raw CLI result, if any), `returncode`, and
     (only on the failure paths) `launch_error`/`timed_out`.
     """
-    task_labels: dict[str, str] = {}
     result_event: dict[str, Any] | None = None
-    current_phase: tuple[str, str] | None = None
     did_call_count = 0
-    # Tracks the last phase a divider was actually emitted for, so the
-    # divider fires exactly once per transition (not once per line) and
-    # never before the very first phase of the run.
-    last_divider_phase: tuple[str, str] | None = None
+    # Phase of each subagent launched this run, keyed by the id of the
+    # tool_use call that launched it. Every event a subagent emits carries
+    # that id in `parent_tool_use_id` — its text, its tool_use calls and its
+    # tool_results alike (verified against a live `--forward-subagent-text`
+    # stream) — so a line's tag is resolved from its *own* parent rather than
+    # from a single mutable "phase of the moment". That single variable is
+    # what previously mislabeled predictor lines as "@Workflow.Harness-skill":
+    # anything that reset it while a subagent was still streaming (a
+    # tool_result handed back to the orchestrator, a parent-less top-level
+    # call) retagged every remaining line of that subagent's work, including
+    # the predictor's own ReAct rounds. Entries are never removed — a
+    # subagent's trailing events can arrive after its Task has returned, and
+    # tool_use ids are unique, so keeping them costs nothing and keeps late
+    # lines correctly attributed.
+    subagent_phases: dict[str, tuple[str, str]] = {}
+    # The orchestrator's own phase — used only for events with no
+    # `parent_tool_use_id`, i.e. lines the skill harness itself produced.
+    orchestrator_phase: tuple[str, str] | None = None
+    # Phase of the last line actually emitted, so a divider fires exactly
+    # once per transition (not once per line) and never before the run's
+    # very first phase.
+    last_phase: tuple[str, str] | None = None
+
+    def emit(text: str, phase: tuple[str, str] | None) -> list[dict[str, Any]]:
+        """Render one trace line under `phase`, preceded by a divider when
+        that differs from the previous line's phase."""
+        nonlocal last_phase
+        events: list[dict[str, Any]] = []
+        if last_phase is not None and phase != last_phase:
+            events.append({"type": "log", "text": TRACE_DIVIDER_SENTINEL})
+        last_phase = phase
+        events.append({"type": "log", "text": _bulletize(text, phase)})
+        return events
 
     try:
         proc = subprocess.Popen(
@@ -292,17 +319,22 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
 
             if etype == "system" and obj.get("subtype") == "init":
                 text = f"Session started (model: {obj.get('model')}, mcp: {obj.get('mcp_servers')})"
-                yield {"type": "log", "text": _bulletize(text, current_phase)}
+                yield from emit(text, orchestrator_phase)
             elif etype == "assistant":
                 # Rendered as an explicit ReAct Thought/Action pair per block:
                 # free text is the model's reasoning for what to do next
                 # (Thought), a tool_use is the action it takes on that
                 # reasoning (Action). The matching Observation arrives later
                 # as a separate "user" event carrying the tool_result.
+                #
+                # Whose line this is follows from parent_tool_use_id alone: a
+                # subagent's own launch id maps to that subagent's phase, no
+                # parent means the orchestrator itself.
+                event_phase = subagent_phases.get(parent_id) if parent_id else orchestrator_phase
                 for block in obj.get("message", {}).get("content", []):
                     btype = block.get("type")
                     if btype == "text" and block.get("text", "").strip():
-                        yield {"type": "log", "text": _bulletize(f"Thought: {block['text'].strip()}", current_phase)}
+                        yield from emit(f"Thought: {block['text'].strip()}", event_phase)
                     elif btype == "tool_use":
                         name = block.get("name", "tool")
                         tool_input = block.get("input", {})
@@ -322,50 +354,53 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
                                 or tool_input.get("description")
                                 or "subagent"
                             )
-                            task_labels[block.get("id", "")] = label
-                            current_phase = _detect_task_phase(label, tool_input, did_call_count, mode_label)
+                            launched = _detect_task_phase(label, tool_input, did_call_count, mode_label)
+                            subagent_phases[block.get("id", "")] = launched
                             if label == "did":
                                 did_call_count += 1
-                            if current_phase != last_divider_phase and last_divider_phase is not None:
-                                yield {"type": "log", "text": TRACE_DIVIDER_SENTINEL}
-                            last_divider_phase = current_phase
-                            yield {"type": "log", "text": _bulletize(f"Action: Invoke {label} subagent...", current_phase)}
+                            # Tagging the launch line with the phase it
+                            # starts (rather than the caller's own) is what
+                            # puts the divider before the subagent's first
+                            # line instead of after it.
+                            if not parent_id:
+                                orchestrator_phase = launched
+                            yield from emit(f"Action: Invoke {label} subagent...", launched)
+                        elif parent_id:
+                            # A subagent's own tool call — the predictor's
+                            # WebSearch/MCP lookups, say. It keeps that
+                            # subagent's phase, and must never touch
+                            # orchestrator_phase.
+                            summary = json.dumps(tool_input)[:160]
+                            yield from emit(f"Action: {name}({summary})", event_phase)
                         else:
                             if name == "Bash":
                                 bash_cmd = str(tool_input.get("command", ""))
                                 if "verify_data_integrity" in bash_cmd:
-                                    current_phase = ("Process", "Integrity-Check")
+                                    orchestrator_phase = ("Process", "Integrity-Check")
                                 elif "validate_predictions" in bash_cmd:
-                                    current_phase = ("Process", "Validate")
-                                elif not parent_id:
-                                    current_phase = ("Workflow", "Harness-skill")
-                            elif name == "Write" and not parent_id:
-                                current_phase = ("Process", "Finalize")
-                            elif not parent_id:
+                                    orchestrator_phase = ("Process", "Validate")
+                                else:
+                                    orchestrator_phase = ("Workflow", "Harness-skill")
+                            elif name == "Write":
+                                orchestrator_phase = ("Process", "Finalize")
+                            else:
                                 # A top-level tool call with no enclosing
                                 # subagent Task — most often the orchestrator
                                 # double-checking its own trace excerpt
                                 # (SKILL.md step 4/8) with Grep/Read before
-                                # trusting it. Without this, current_phase
-                                # would still be whatever subagent phase was
-                                # last set (e.g. "DiD.During-Gen"), which
-                                # misleadingly implies the tools-less `did`
-                                # subagent itself read the file — it
-                                # structurally cannot, since did's
-                                # `tools: []` forbids it. Tag these
-                                # distinctly so the trace never looks like a
-                                # guardrail violated its own restriction.
-                                current_phase = ("Workflow", "Harness-skill")
-                            if current_phase != last_divider_phase and last_divider_phase is not None:
-                                yield {"type": "log", "text": TRACE_DIVIDER_SENTINEL}
-                            last_divider_phase = current_phase
+                                # trusting it. Tagged distinctly so the trace
+                                # never implies the tools-less `did` subagent
+                                # read a file itself — it structurally cannot,
+                                # since did's `tools: []` forbids it.
+                                orchestrator_phase = ("Workflow", "Harness-skill")
                             summary = json.dumps(tool_input)[:160]
-                            yield {"type": "log", "text": _bulletize(f"Action: {name}({summary})", current_phase)}
+                            yield from emit(f"Action: {name}({summary})", orchestrator_phase)
             elif etype == "user":
                 # Tool results come back as a "user" event's tool_result
                 # content blocks — this is the Observation half of the
                 # Thought/Action/Observation loop; the original code never
                 # surfaced these at all.
+                event_phase = subagent_phases.get(parent_id) if parent_id else orchestrator_phase
                 for block in obj.get("message", {}).get("content", []):
                     if not isinstance(block, dict) or block.get("type") != "tool_result":
                         continue
@@ -378,22 +413,19 @@ def _stream_and_parse(cmd: list[str], timeout_seconds: int, mode_label: str) -> 
                     if not content:
                         continue
                     summary = content if len(content) <= 300 else content[:300] + "...[truncated]"
-                    yield {"type": "log", "text": _bulletize(f"Observation: {summary}", current_phase)}
-                    # This tool_result's tool_use_id matches a pending Task/
-                    # Agent call (recorded in task_labels when the Action was
-                    # emitted, keyed by that call's own id) exactly when it's
-                    # the subagent's *finished* answer coming back to the
-                    # orchestrator. Once consumed, current_phase must revert
-                    # to the orchestrator's own default — otherwise the
-                    # orchestrator's next freeform Thought (no tool_use of its
-                    # own yet, so nothing else would update current_phase)
-                    # keeps showing the subagent's tag (e.g. "@DiD.During-Gen")
-                    # even though it's the orchestrator reasoning about that
-                    # subagent's output, not the subagent itself.
-                    tool_use_id = block.get("tool_use_id")
-                    if tool_use_id in task_labels:
-                        del task_labels[tool_use_id]
-                        current_phase = ("Workflow", "Harness-skill")
+                    # A tool_result whose id launched a subagent is that
+                    # subagent's *finished* answer arriving back at the
+                    # orchestrator: it reads as the subagent's closing line,
+                    # and control returns to the orchestrator immediately
+                    # after — otherwise the orchestrator's next freeform
+                    # Thought (no tool_use of its own yet, so nothing else
+                    # would move the phase) would still carry the subagent's
+                    # tag while it is really the orchestrator reasoning about
+                    # that subagent's output.
+                    finished = subagent_phases.get(block.get("tool_use_id"))
+                    yield from emit(f"Observation: {summary}", finished or event_phase)
+                    if finished is not None:
+                        orchestrator_phase = ("Workflow", "Harness-skill")
             elif etype == "result":
                 result_event = obj
 
