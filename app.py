@@ -17,6 +17,7 @@ import json
 import re
 import time
 import traceback
+from pathlib import Path
 from typing import Any
 import pandas as pd
 import gradio as gr
@@ -48,6 +49,7 @@ from ui.cli_runner import (
     AVAILABLE_MODELS,
     DEFAULT_MAX_BUDGET_USD,
     DEFAULT_MODEL,
+    PREDICTIONS_DIR,
     TRACE_DIVIDER_SENTINEL,
     resume_real_predictor_stream,
     run_real_predictor_stream,
@@ -60,6 +62,12 @@ from ui.cli_runner import (
 # text — it's the only place that identity is shown once the dropdown has a
 # value selected.
 MODEL_CHOICES = [(f"Model: {m.capitalize()}", m) for m in AVAILABLE_MODELS]
+
+# The "View a past run" dropdown's permanent first choice (value "") — always
+# selected until the user actually picks a run, so the field itself reads
+# "View a past run" the same way the Model field always reads "Model: Sonnet",
+# rather than showing empty/blank when nothing's been chosen yet.
+PAST_RUN_PLACEHOLDER = "View a past run"
 
 
 def _subagent_model_choices(label: str) -> list[tuple[str, str]]:
@@ -702,6 +710,75 @@ def _load_real_run_report(report_stem: str, target_team: str, season_val: int):
     return md, prob_md, prob_table, chart, audit_md
 
 
+def _trace_log_path(report_stem: str) -> Path:
+    return PREDICTIONS_DIR / f"{report_stem}.trace.log"
+
+
+def _save_trace_log(report_stem: str, log_lines: list[str]) -> None:
+    """Persist this run's raw Reasoning Trace text as a sibling of its saved
+    report, so a later session can reload this exact run from the "Load a
+    past run" dropdown (see load_past_agent_run_ui) instead of the trace
+    being lost the moment the live UI state is gone. Best-effort: a failure
+    here must never break report finalization."""
+    try:
+        _trace_log_path(report_stem).write_text("\n".join(log_lines), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _list_real_agent_runs_with_trace() -> list[dict[str, Any]]:
+    """Saved reports that also have a persisted Reasoning Trace log — i.e.
+    real agent runs made since this feature was added. Reports without one
+    (older runs, or ones from the Non-Agentic Simulator tab) are left out of
+    the picker rather than shown with an empty trace."""
+    return [item for item in list_saved_predictions() if _trace_log_path(item["stem"]).exists()]
+
+
+@_handle_errors
+def refresh_past_agent_runs_ui():
+    """(Re)populate the "View a past run" dropdown, newest first, without
+    changing whatever is currently loaded in the tabs. Runs on page load
+    (see demo.load below) — there's no in-tab refresh button, since a run
+    just finished always lands on top the next time this fires, and
+    reloading the browser page re-fires it for anything else."""
+    items = _list_real_agent_runs_with_trace()
+    choices = [(PAST_RUN_PLACEHOLDER, "")] + [(item["title"], item["stem"]) for item in items]
+    return gr.Dropdown(choices=choices, value="")
+
+
+@_handle_errors
+def load_past_agent_run_ui(selected_stem: str):
+    """Reload a previously saved real-agent run's Reasoning Trace and result
+    panels from disk, so picking it from the dropdown reproduces every tab
+    exactly as it looked the moment that run finished — same 12-output shape
+    as run_real_predictor_ui/resume_real_predictor_ui (see agent_run_outputs).
+    `selected_stem` is "" when the placeholder itself (PAST_RUN_PLACEHOLDER)
+    is the current selection — treated the same as no selection at all."""
+    if not selected_stem:
+        return (
+            gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(),
+            gr.update(),
+            gr.update(), None, gr.update(visible=False, value=""), gr.update(visible=False), gr.update(),
+        )
+
+    trace_path = _trace_log_path(selected_stem)
+    raw_log = (
+        trace_path.read_text(encoding="utf-8") if trace_path.exists()
+        else "*No saved Reasoning Trace for this run — it predates this feature.*"
+    )
+
+    data = load_prediction_file(selected_stem) or {}
+    season_val = data.get("season") or _CURRENT_SEASON
+    target_team = data.get("target_team") or "PHI"
+    md, prob_md, prob_table, chart, audit_md = _load_real_run_report(selected_stem, target_team, season_val)
+
+    return (
+        _format_trace_markdown(raw_log), md, prob_md, prob_table, chart, audit_md,
+        f"📂 **Loaded past run:** `{selected_stem}`",
+        gr.update(), None, gr.update(visible=False, value=""), gr.update(visible=False), raw_log,
+    )
+
+
 def run_real_predictor_ui(
     mode_choice: str,
     season_val: int,
@@ -803,6 +880,7 @@ def run_real_predictor_ui(
             if event["report_stem"]:
                 md, prob_md, prob_table, chart, audit_md = _load_real_run_report(event["report_stem"], target_team, season_val)
                 log_lines.append(f"\n• @Process.Finalize — Done. Report saved: {event['report_stem']}{cost_note}{duration_note}")
+                _save_trace_log(event["report_stem"], log_lines)
                 yield (
                     _render_log(log_lines), md, prob_md, prob_table, chart, audit_md,
                     f"✅ **Done.** Report saved: `{event['report_stem']}`{cost_note}{duration_note}",
@@ -927,6 +1005,7 @@ def resume_real_predictor_ui(
             if event["report_stem"]:
                 md, prob_md, prob_table, chart, audit_md = _load_real_run_report(event["report_stem"], target_team, season_val)
                 log_lines.append(f"\n• @Process.Finalize — Done. Report saved: {event['report_stem']}{cost_note}{duration_note}")
+                _save_trace_log(event["report_stem"], log_lines)
                 yield (
                     _render_log(log_lines), md, prob_md, prob_table, chart, audit_md,
                     f"✅ **Done.** Report saved: `{event['report_stem']}`{cost_note}{duration_note}",
@@ -1408,9 +1487,38 @@ def build_app() -> gr.Blocks:
                     '<span class="trace-tag trace-tag-critic">Critic</span> → '
                     '<span class="trace-tag trace-tag-validate">deterministic validation</span> → '
                     '<span class="trace-tag trace-tag-did-post">DiD post-generation guardrail</span> → '
-                    '<span class="trace-tag trace-tag-process">final result</span>.',
+                    '<span class="trace-tag trace-tag-process">final result</span>',
                     elem_classes=["tab-intro", "workflow-line"],
                 )
+
+                # Reload a finished run's Reasoning Trace + result panels from
+                # its saved outputs/predictions/*.trace.log (written by
+                # run_real_predictor_ui/resume_real_predictor_ui on completion
+                # — see _save_trace_log) instead of only ever showing the most
+                # recent run. Only runs with a saved trace appear here (see
+                # _list_real_agent_runs_with_trace) — older reports or ones
+                # from the Simulator tab are left out rather than shown with
+                # an empty trace. Styled to match the compact Model dropdowns
+                # above (container=False, small min_width, scale=0 so it
+                # doesn't stretch) rather than a full-width labeled field —
+                # this is a secondary action, not the tab's main control.
+                # No refresh button: list_saved_predictions()'s mtime scan
+                # already runs fresh on every page load (see demo.load below);
+                # a dedicated button here would read as "refresh the
+                # prediction run" rather than "refresh this list".
+                # PAST_RUN_PLACEHOLDER is always choice #1 (value "") so the
+                # dropdown itself always displays "View a past run" until an
+                # actual run is picked — the same pattern MODEL_CHOICES uses
+                # to keep "Model: Sonnet" always visible in that field.
+                with gr.Row():
+                    past_run_dropdown = gr.Dropdown(
+                        choices=[(PAST_RUN_PLACEHOLDER, "")],
+                        value="",
+                        show_label=False,
+                        container=False,
+                        min_width=260,
+                    )
+
                 with gr.Row():
                     with gr.Column(scale=1):
                         agent_mode = gr.Radio(
@@ -1516,6 +1624,18 @@ def build_app() -> gr.Blocks:
                 agent_run_btn.click(fn=None, js=START_CLOCK_JS, inputs=None, outputs=None)
                 agent_log.change(fn=None, js=SCROLL_TRACE_JS, inputs=None, outputs=None)
                 agent_status.change(fn=None, js=SCROLL_TO_REPLY_JS, inputs=None, outputs=None)
+
+                # "View a past run": populated on page load (a browser reload
+                # re-fires this if a just-finished run isn't listed yet — no
+                # in-tab refresh button, see the dropdown's own comment
+                # above). Selecting an entry immediately loads it — same
+                # pattern as the Audit tab's reports_dropdown below.
+                demo.load(fn=refresh_past_agent_runs_ui, outputs=[past_run_dropdown])
+                past_run_dropdown.change(
+                    fn=load_past_agent_run_ui,
+                    inputs=[past_run_dropdown],
+                    outputs=agent_run_outputs,
+                )
 
                 # Fires only when the run paused for a human-in-the-loop
                 # decision (agent_reply_box/agent_reply_btn become visible
